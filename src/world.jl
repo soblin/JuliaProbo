@@ -1,8 +1,7 @@
 using Plots
+using JuliaProbo
 
-include("agent.jl")
-
-struct Landmark <: Object
+struct Landmark <: AbstractObject
     pos::Vector{Float64}
     id::Int64
     function Landmark(pos::Vector{Float64}, id::Int64)
@@ -15,7 +14,7 @@ function draw(mark::Landmark, p)
     p = annotate!(mark.pos[1] + 0.5, mark.pos[2] + 0.5, text("id: $(mark.id)", 10))
 end
 
-mutable struct Map <: Object
+mutable struct Map <: AbstractObject
     landmarks_::Vector{Landmark}
     function Map()
         new(Vector{Landmark}[])
@@ -39,16 +38,16 @@ function draw(map::Map, p)
 end
 
 mutable struct World
-    objects_::Vector{Object}
+    objects_::Vector{AbstractObject}
     xlim_::Vector{Float64}
     ylim_::Vector{Float64}
     debug_::Bool
     function World(xlim::Vector{Float64}, ylim::Vector{Float64}, debug=false)
-        new(Vector{Object}[], [xlim[1], xlim[2]], [ylim[1], ylim[2]], debug)
+        new(Vector{AbstractObject}[], [xlim[1], xlim[2]], [ylim[1], ylim[2]], debug)
     end
 end
 
-function Base.push!(world::World, obj::Object)
+function Base.push!(world::World, obj::AbstractObject)
     push!(world.objects_, obj)
 end
 

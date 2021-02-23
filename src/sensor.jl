@@ -1,10 +1,7 @@
 using Plots
+using JuliaProbo
 
-abstract type Sensor end
-
-include("world.jl")
-
-mutable struct IdealCamera <: Sensor
+mutable struct IdealCamera <: AbstractSensor
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}
     distance_range::Vector{Float64}

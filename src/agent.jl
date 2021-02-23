@@ -1,6 +1,6 @@
-abstract type Object end
+using JuliaProbo
 
-mutable struct Agent <: Object
+mutable struct Agent <: AbstractObject
     v_::Float64
     ω_::Float64
     function Agent(v::Float64, ω::Float64)

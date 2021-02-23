@@ -1,16 +1,14 @@
 using Plots
+using JuliaProbo
 
-include("agent.jl")
-include("sensor.jl")
-
-mutable struct IdealRobot <: Object
+mutable struct IdealRobot <: AbstractObject
     pose_::Vector{Float64}
     agent_::Agent
     radius_::Float64
     color_::String
     poses_::Vector{Vector{Float64}}
-    sensor_::Sensor
-    function IdealRobot(pose::Vector{Float64}, agent::Agent, sensor::Sensor, radius=0.2, color="blue")
+    sensor_::AbstractSensor
+    function IdealRobot(pose::Vector{Float64}, agent::Agent, sensor::AbstractSensor, radius=0.2, color="blue")
         new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], sensor)
     end
 end
