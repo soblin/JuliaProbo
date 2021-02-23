@@ -1,3 +1,8 @@
+name = "JuliaProbo"
+uuid = "3c270a3a-2612-4193-9bf7-68cd93c8ae26"
+authors = ["soblin"]
+version = "0.1.0"
+
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
