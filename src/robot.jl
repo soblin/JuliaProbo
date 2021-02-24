@@ -7,11 +7,25 @@ mutable struct IdealRobot <: AbstractObject
     color_::String
     poses_::Vector{Vector{Float64}}
     sensor_::Union{AbstractSensor, Nothing}
-    function IdealRobot(pose::Vector{Float64}, agent::Agent, sensor::Union{AbstractSensor, Nothing}, radius=0.2, color="blue")
-        if typeof(sensor) == nothing
-            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], nothing)
+    function IdealRobot(pose::Vector{Float64},
+                        agent::Agent,
+                        sensor::Union{AbstractSensor, Nothing},
+                        radius=0.2,
+                        color="blue")
+        if typeof(sensor) == Nothing
+            new([pose[1], pose[2], pose[3]],
+                agent,
+                radius,
+                color,
+                [copy(pose)],
+                nothing)
         else
-            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], sensor)
+            new([pose[1], pose[2], pose[3]],
+                agent,
+                radius,
+                color,
+                [copy(pose)],
+                sensor)
         end
     end
 end
@@ -27,7 +41,8 @@ function draw(robot::IdealRobot, p::Plot{T}) where T
     θ = robot.pose_[3]
     # pose
     p = quiver!([robot.pose_[1]], [robot.pose_[2]],
-                quiver=([robot.radius_ * cos(θ) * 5], [robot.radius_ * sin(θ) * 5]), color="black")
+                quiver=([robot.radius_ * cos(θ) * 5], [robot.radius_ * sin(θ) * 5]),
+                color="black")
     # traj
     x_his = [pose[1] for pose in robot.poses_]
     y_his = [pose[2] for pose in robot.poses_]
@@ -63,13 +78,36 @@ mutable struct RealRobot <: AbstractObject
     noise_::Exponential{Float64}
     theta_noise_::Normal{Float64}
     distance_until_noise_::Float64
-    function RealRobot(pose::Vector{Float64}, agent::Agent, sensor::Union{AbstractSensor, Nothing}, radius=0.2, color="blue", noise_per_meter=5.0, noise_std=pi/60)
+    function RealRobot(pose::Vector{Float64},
+                       agent::Agent,
+                       sensor::Union{AbstractSensor, Nothing},
+                       radius=0.2,
+                       color="blue",
+                       noise_per_meter=5.0,
+                       noise_std=pi/60)
+        
         if typeof(sensor) == nothing
             noise = Exponential(1.0 / (1e-100 + noise_per_meter))
-            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], nothing, noise, Normal(0.0, noise_std), rand(noise))
+            new([pose[1], pose[2], pose[3]],
+                agent,
+                radius,
+                color,
+                [copy(pose)],
+                nothing,
+                noise,
+                Normal(0.0, noise_std),
+                rand(noise))
         else
             noise = Exponential(1.0 / (1e-100 + noise_per_meter))
-            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], sensor, noise, Normal(0.0, noise_std), rand(noise))
+            new([pose[1], pose[2], pose[3]],
+                agent,
+                radius,
+                color,
+                [copy(pose)],
+                sensor,
+                noise,
+                Normal(0.0, noise_std),
+                rand(noise))
         end
     end
 end

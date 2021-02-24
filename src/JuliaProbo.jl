@@ -1,6 +1,6 @@
 module JuliaProbo
 
-import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!
+import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
 import Random: rand
 import Distributions: Exponential, Normal
 

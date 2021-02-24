@@ -42,7 +42,10 @@ mutable struct World
     ylim_::Vector{Float64}
     debug_::Bool
     function World(xlim::Vector{Float64}, ylim::Vector{Float64}, debug=false)
-        new(Vector{AbstractObject}[], [xlim[1], xlim[2]], [ylim[1], ylim[2]], debug)
+        new(Vector{AbstractObject}[],
+            [xlim[1], xlim[2]],
+            [ylim[1], ylim[2]],
+            debug)
     end
 end
 

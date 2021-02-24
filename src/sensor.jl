@@ -5,18 +5,19 @@ mutable struct IdealCamera <: AbstractSensor
     last_observation_::Vector{Vector{Float64}}
     distance_range::Vector{Float64}
     direction_range::Vector{Float64}
-    function IdealCamera(landmark::Vector{Landmark}, distance_range=[0.5, 6.0], direction_range=[-pi/3, pi/3])
-        new(landmark, Vector{Vector{Float64}}[], distance_range, direction_range)
+    function IdealCamera(landmark::Vector{Landmark},
+                         distance_range=[0.5, 6.0],
+                         direction_range=[-pi/3, pi/3])
+        new(landmark,
+            Vector{Vector{Float64}}[],
+            distance_range,
+            direction_range)
     end
 end
 
-function visible(camera::IdealCamera, polarpos::Vector{Float64}=nothing)
-    if polarpos == nothing
-        return false
-    else
-        return camera.distance_range[1] <= polarpos[1] <= camera.distance_range[2] &&
+function visible(camera::IdealCamera, polarpos::Vector{Float64})
+    return camera.distance_range[1] <= polarpos[1] <= camera.distance_range[2] &&
         camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
-    end
 end
 
 function observation_function(camera_pose::Vector{Float64}, landmark_pos::Vector{Float64})
