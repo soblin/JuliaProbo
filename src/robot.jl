@@ -75,11 +75,20 @@ mutable struct RealRobot <: AbstractObject
     color_::String
     poses_::Vector{Vector{Float64}}
     sensor_::Union{AbstractSensor, Nothing}
+    # motion uncertainty
+    ## movement noise
     noise_::Exponential{Float64}
     theta_noise_::Normal{Float64}
     distance_until_noise_::Float64
+    ## velocity bias noise
     bias_rate_v_::Float64
     bias_rate_ω_::Float64
+    ## stuck noise
+    stuck_noise_::Exponential{Float64}
+    escape_noise_::Exponential{Float64}
+    time_until_stuck_::Float64
+    time_until_escape_::Float64
+    is_stuck_::Bool
     function RealRobot(pose::Vector{Float64},
                        agent::Agent,
                        sensor::Union{AbstractSensor, Nothing};
@@ -87,25 +96,60 @@ mutable struct RealRobot <: AbstractObject
                        color="blue",
                        noise_per_meter=5.0,
                        noise_std=pi/60,
-                       bias_rate_stds=(0.1, 0.1))
+                       bias_rate_stds=(0.1, 0.1),
+                       expected_stuck_time=1e100,
+                       expected_escape_time=1e-100)
         noise = Exponential(1.0 / (1e-100 + noise_per_meter))
+        stuck_noise = Exponential(expected_stuck_time)
+        escape_noise = Exponential(expected_escape_time)
+        
         new([pose[1], pose[2], pose[3]],
             agent,
             radius,
             color,
             [copy(pose)],
             sensor,
-            noise,
+            noise, ## movement noise
             Normal(0.0, noise_std),
             rand(noise),
-            rand(Normal(1.0, bias_rate_stds[1])),
-            rand(Normal(1.0, bias_rate_stds[2])))
+            rand(Normal(1.0, bias_rate_stds[1])), ## velocity noise
+            rand(Normal(1.0, bias_rate_stds[2])),
+            stuck_noise, ## stuck noise
+            escape_noise,
+            rand(stuck_noise),
+            rand(escape_noise),
+            false)
     end
 end
 
+function apply_bias_error(robot::RealRobot, v::Float64, ω::Float64)
+    return v * robot.bias_rate_v_, ω * robot.bias_rate_ω_
+end
+
+function apply_stuck_error(robot::RealRobot, v::Float64, ω::Float64, dt::Float64)
+    if robot.is_stuck_
+        robot.time_until_escape_ -= dt
+        if robot.time_until_escape_ <= 0.0
+            robot.time_until_escape_ += rand(robot.escape_noise_)
+            robot.is_stuck_ = false
+        end
+    else
+        robot.time_until_stuck_ -= dt
+        if robot.time_until_stuck_ <= 0.0
+            robot.time_until_stuck_ += rand(robot.stuck_noise_)
+            robot.is_stuck_ = true
+        end
+    end
+
+    return v * convert(Float64, robot.is_stuck_), ω * convert(Float64, robot.is_stuck_)
+end
+
 function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float64)
-    v = v1 * robot.bias_rate_v_
-    ω = ω1 * robot.bias_rate_ω_
+    ## velocity bias  noise
+    v, ω = apply_bias_error(robot, v1, ω1)
+
+    ## stuck noise
+    v, ω = apply_stuck_error(robot, v, ω, dt)
     
     θ = robot.pose_[3]
     new_pose = [0.0, 0.0, 0.0]
@@ -118,12 +162,14 @@ function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float
                  ω*dt]
         new_pose = robot.pose_ .+ dpose
     end
-    # add noise
+    
+    ## movement noise
     robot.distance_until_noise_ -= (abs(v) * dt + robot.radius_ * abs(ω) * dt)
     if robot.distance_until_noise_ <= 0.0
         robot.distance_until_noise_ += rand(robot.noise_)
         new_pose[3] += rand(robot.theta_noise_)
     end
+    ## 
     push!(robot.poses_, copy(robot.pose_))
     robot.pose_ = copy(new_pose)
     return new_pose
