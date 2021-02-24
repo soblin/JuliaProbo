@@ -78,41 +78,35 @@ mutable struct RealRobot <: AbstractObject
     noise_::Exponential{Float64}
     theta_noise_::Normal{Float64}
     distance_until_noise_::Float64
+    bias_rate_v_::Float64
+    bias_rate_ω_::Float64
     function RealRobot(pose::Vector{Float64},
                        agent::Agent,
-                       sensor::Union{AbstractSensor, Nothing},
+                       sensor::Union{AbstractSensor, Nothing};
                        radius=0.2,
                        color="blue",
                        noise_per_meter=5.0,
-                       noise_std=pi/60)
-        
-        if typeof(sensor) == nothing
-            noise = Exponential(1.0 / (1e-100 + noise_per_meter))
-            new([pose[1], pose[2], pose[3]],
-                agent,
-                radius,
-                color,
-                [copy(pose)],
-                nothing,
-                noise,
-                Normal(0.0, noise_std),
-                rand(noise))
-        else
-            noise = Exponential(1.0 / (1e-100 + noise_per_meter))
-            new([pose[1], pose[2], pose[3]],
-                agent,
-                radius,
-                color,
-                [copy(pose)],
-                sensor,
-                noise,
-                Normal(0.0, noise_std),
-                rand(noise))
-        end
+                       noise_std=pi/60,
+                       bias_rate_stds=(0.1, 0.1))
+        noise = Exponential(1.0 / (1e-100 + noise_per_meter))
+        new([pose[1], pose[2], pose[3]],
+            agent,
+            radius,
+            color,
+            [copy(pose)],
+            sensor,
+            noise,
+            Normal(0.0, noise_std),
+            rand(noise),
+            rand(Normal(1.0, bias_rate_stds[1])),
+            rand(Normal(1.0, bias_rate_stds[2])))
     end
 end
 
-function state_transition(robot::RealRobot, v::Float64, ω::Float64, dt::Float64)
+function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float64)
+    v = v1 * robot.bias_rate_v_
+    ω = ω1 * robot.bias_rate_ω_
+    
     θ = robot.pose_[3]
     new_pose = [0.0, 0.0, 0.0]
     if abs(ω) < 1e-10

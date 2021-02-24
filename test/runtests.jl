@@ -41,7 +41,7 @@ function ch4_sim2()
     robots = Array{RealRobot, 1}(undef, 0)
     for i in 1:10
         circling = Agent(0.2, 10.0 / 180 * pi)
-        robot = RealRobot([0.0, 0.0, 0.0], circling, nothing, 0.05, "black")
+        robot = RealRobot([0.0, 0.0, 0.0], circling, nothing; radius=0.05, color="black", bias_rate_stds=(0.0, 0.0))
         push!(circlings, circling)
         push!(robots, robot)
         push!(world, robot)
