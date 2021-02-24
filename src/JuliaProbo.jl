@@ -1,11 +1,13 @@
 module JuliaProbo
 
-import Plots
+import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!
+import Random: rand
+import Distributions: Exponential, Normal
 
 export AbstractObject, AbstractSensor
 export draw
 export Agent, decision
-export IdealRobot, state_transition
+export IdealRobot, RealRobot, state_transition
 export Map
 export IdealCamera, visible, observations
 export Landmark,World, push!

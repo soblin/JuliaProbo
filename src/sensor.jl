@@ -1,4 +1,3 @@
-using Plots
 using JuliaProbo
 
 mutable struct IdealCamera <: AbstractSensor
@@ -28,7 +27,10 @@ function observation_function(camera_pose::Vector{Float64}, landmark_pos::Vector
     return [sqrt(sum(diff .* diff)), ϕ]
 end
 
-function observations(camera::IdealCamera, camera_pose::Vector{Float64})
+function observations(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{Float64})
+    if typeof(camera) == Nothing
+        return nothing
+    end
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
@@ -42,7 +44,10 @@ function observations(camera::IdealCamera, camera_pose::Vector{Float64})
     return observed
 end
 
-function draw(camera::IdealCamera, camera_pose::Vector{Float64}, p)
+function draw(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{Float64}, p::Plot{T}) where T
+    if camera == nothing
+        return
+    end
     for obsv = camera.last_observation_
         x, y, θ = camera_pose
         distance, direction = obsv[1], obsv[2]
