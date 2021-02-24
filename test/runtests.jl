@@ -21,9 +21,9 @@ function main()
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota);
         plot(p);
-        for i in 1:10
-            v, ω = decision(circlings[i], nothing)
-            state_transition(robots[i], v, ω, dt)
+        for j in 1:10
+            v, ω = decision(circlings[j], nothing)
+            state_transition(robots[j], v, ω, dt)
         end
     end
     gif(anim, "ch4_sim2.gif", fps=10);
