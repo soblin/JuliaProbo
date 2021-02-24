@@ -68,6 +68,21 @@ function state_transition(robot::IdealRobot, v::Float64, ω::Float64, dt::Float6
     return new_pose
 end
 
+struct PoseUniform
+    low::Vector{Float64}
+    upp::Vector{Float64}
+    uni::Uniform{Float64}
+    function PoseUniform(a::Vector{Float64}, b::Vector{Float64})
+        new([a[1], b[1], 0], [a[2], b[2], 2*pi], Uniform())
+    end
+end
+
+function uniform(mv::PoseUniform)
+    c = mv.upp - mv.low
+    x = [rand(mv.uni) for i in 1:3]
+    return mv.low .+ (x .* c)
+end
+
 mutable struct RealRobot <: AbstractObject
     pose_::Vector{Float64}
     agent_::Agent
@@ -89,6 +104,11 @@ mutable struct RealRobot <: AbstractObject
     time_until_stuck_::Float64
     time_until_escape_::Float64
     is_stuck_::Bool
+    ## kidnap
+    kidnap_noise_::Exponential{Float64}
+    time_until_kidnap_::Float64
+    kidnap_distrib_::PoseUniform
+    
     function RealRobot(pose::Vector{Float64},
                        agent::Agent,
                        sensor::Union{AbstractSensor, Nothing};
@@ -98,10 +118,15 @@ mutable struct RealRobot <: AbstractObject
                        noise_std=pi/60,
                        bias_rate_stds=(0.1, 0.1),
                        expected_stuck_time=1e100,
-                       expected_escape_time=1e-100)
+                       expected_escape_time=1e-100,
+                       expected_kidnap_time=1e100,
+                       kidnap_range_x=[-5.0, 5.0],
+                       kidnap_range_y=[-5.0, 5.0]
+                       )
         noise = Exponential(1.0 / (1e-100 + noise_per_meter))
         stuck_noise = Exponential(expected_stuck_time)
         escape_noise = Exponential(expected_escape_time)
+        kidnap_noise = Exponential(expected_kidnap_time)
         
         new([pose[1], pose[2], pose[3]],
             agent,
@@ -118,7 +143,11 @@ mutable struct RealRobot <: AbstractObject
             escape_noise,
             rand(stuck_noise),
             rand(escape_noise),
-            false)
+            false,
+            kidnap_noise, ## kidnap
+            rand(kidnap_noise),
+            PoseUniform(kidnap_range_x, kidnap_range_y)
+            )
     end
 end
 
@@ -142,6 +171,14 @@ function apply_stuck_error(robot::RealRobot, v::Float64, ω::Float64, dt::Float6
     end
 
     return v * convert(Float64, robot.is_stuck_), ω * convert(Float64, robot.is_stuck_)
+end
+
+function apply_kidnap(robot::RealRobot, dt::Float64)
+    robot.time_until_kidnap_ -= dt
+    if robot.time_until_kidnap_ <= 0.0
+        robot.time_until_kidnap_ += rand(robot.kidnap_noise_)
+        #robot.pose_ = uniform(robot.kidnap_distrib_)
+    end
 end
 
 function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float64)
@@ -169,10 +206,13 @@ function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float
         robot.distance_until_noise_ += rand(robot.noise_)
         new_pose[3] += rand(robot.theta_noise_)
     end
-    ## 
+    
+    # save trajectory
     push!(robot.poses_, copy(robot.pose_))
+    
+    ## kidnap
     robot.pose_ = copy(new_pose)
-    return new_pose
+    # apply_kidnap(robot, dt)    
 end
 
 function draw(robot::RealRobot, p::Plot{T}) where T

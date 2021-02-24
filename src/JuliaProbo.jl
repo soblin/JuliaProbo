@@ -2,7 +2,7 @@ module JuliaProbo
 
 import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
 import Random: rand
-import Distributions: Exponential, Normal
+import Distributions: Exponential, Normal, Uniform
 
 export AbstractObject, AbstractSensor
 export draw
