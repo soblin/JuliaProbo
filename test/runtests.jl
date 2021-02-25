@@ -41,7 +41,7 @@ function ch4_sim2()
     robots = Array{RealRobot, 1}(undef, 0)
     for i in 1:10
         circling = Agent(0.2, 10.0 / 180 * pi)
-        robot = RealRobot([0.0, 0.0, 0.0], circling, nothing; radius=0.05, color="black", bias_rate_stds=(0.0, 0.0))
+        robot = RealRobot([0.0, 0.0, 0.0], circling, nothing; radius=0.05, color="black")
         push!(circlings, circling)
         push!(robots, robot)
         push!(world, robot)
@@ -57,15 +57,15 @@ function ch4_sim2()
             obsv = observations(robots[j].sensor_, robots[j].pose_)
             @assert obsv == nothing
             v, ω = decision(circlings[j], obsv)
-            state_transition(robots[j], v, ω, dt)
+            state_transition(robots[j], v, ω, dt; move_noise=true)
         end
     end
     gif(anim, "ch4_sim2.gif", fps=10);
 end
 
 function main()
-    ch3_robot11()
-    ch4_sim2()
+    ch3_robot11();
+    ch4_sim2();
 end
 
 main()
