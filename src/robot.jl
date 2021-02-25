@@ -72,8 +72,8 @@ struct PoseUniform
     low::Vector{Float64}
     upp::Vector{Float64}
     uni::Uniform{Float64}
-    function PoseUniform(a::Vector{Float64}, b::Vector{Float64})
-        new([a[1], b[1], 0], [a[2], b[2], 2*pi], Uniform())
+    function PoseUniform(xlim::Vector{Float64}, ylim::Vector{Float64})
+        new([xlim[1], ylim[1], 0], [xlim[2], ylim[2], 2*pi], Uniform())
     end
 end
 
@@ -177,16 +177,24 @@ function apply_kidnap(robot::RealRobot, dt::Float64)
     robot.time_until_kidnap_ -= dt
     if robot.time_until_kidnap_ <= 0.0
         robot.time_until_kidnap_ += rand(robot.kidnap_noise_)
-        #robot.pose_ = uniform(robot.kidnap_distrib_)
+        robot.pose_ = uniform(robot.kidnap_distrib_)
     end
 end
 
-function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float64)
+function state_transition(robot::RealRobot, v_::Float64, ω_::Float64, dt::Float64;
+                          move_noise=false, vel_bias_noise=false, stuck_noise=false, kidnap=false)
+    v = v_
+    ω = ω_
+
     ## velocity bias  noise
-    v, ω = apply_bias_error(robot, v1, ω1)
+    if vel_bias_noise
+        v, ω = apply_bias_error(robot, v, ω)
+    end
 
     ## stuck noise
-    v, ω = apply_stuck_error(robot, v, ω, dt)
+    if stuck_noise
+        v, ω = apply_stuck_error(robot, v, ω, dt)
+    end
     
     θ = robot.pose_[3]
     new_pose = [0.0, 0.0, 0.0]
@@ -199,20 +207,25 @@ function state_transition(robot::RealRobot, v1::Float64, ω1::Float64, dt::Float
                  ω*dt]
         new_pose = robot.pose_ .+ dpose
     end
-    
+
     ## movement noise
-    robot.distance_until_noise_ -= (abs(v) * dt + robot.radius_ * abs(ω) * dt)
-    if robot.distance_until_noise_ <= 0.0
-        robot.distance_until_noise_ += rand(robot.noise_)
-        new_pose[3] += rand(robot.theta_noise_)
+    if move_noise
+        robot.distance_until_noise_ -= (abs(v) * dt + robot.radius_ * abs(ω) * dt)
+        if robot.distance_until_noise_ <= 0.0
+            robot.distance_until_noise_ += rand(robot.noise_)
+            new_pose[3] += rand(robot.theta_noise_)
+        end
     end
     
     # save trajectory
     push!(robot.poses_, copy(robot.pose_))
+
+    robot.pose_ = copy(new_pose)
     
     ## kidnap
-    robot.pose_ = copy(new_pose)
-    # apply_kidnap(robot, dt)    
+    if kidnap
+        apply_kidnap(robot, dt)
+    end    
 end
 
 function draw(robot::RealRobot, p::Plot{T}) where T
