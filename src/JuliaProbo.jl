@@ -9,8 +9,8 @@ export draw
 export Agent, decision
 export IdealRobot, RealRobot, state_transition
 export Map
-export IdealCamera, visible, observations
-export Landmark,World, push!
+export IdealCamera, RealCamera, observations
+export Landmark, World, push!
 
 include("types.jl")
 include("agent.jl")

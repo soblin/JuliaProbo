@@ -10,7 +10,7 @@ mutable struct IdealRobot <: AbstractObject
     function IdealRobot(pose::Vector{Float64},
                         agent::Agent,
                         sensor::Union{AbstractSensor, Nothing},
-                        radius=0.2,
+                        radius=0.05,
                         color="blue")
         if typeof(sensor) == Nothing
             new([pose[1], pose[2], pose[3]],
@@ -112,7 +112,7 @@ mutable struct RealRobot <: AbstractObject
     function RealRobot(pose::Vector{Float64},
                        agent::Agent,
                        sensor::Union{AbstractSensor, Nothing};
-                       radius=0.2,
+                       radius=0.05,
                        color="blue",
                        noise_per_meter=5.0,
                        noise_std=pi/60,
