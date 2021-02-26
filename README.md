@@ -1,13 +1,12 @@
-
 ## JuliaProbo
 
-[『詳解　確率ロボティクス』](https://github.com/ryuichiueda/LNPR_BOOK_CODES)のJulia言語による再現．データはこちらのレポジトリから借り，トップに`sensor_data`というディレクトリを配置した．
+Re-implementation of [『詳解　確率ロボティクス』](https://github.com/ryuichiueda/LNPR_BOOK_CODES) in Julia language．Place the dataset in `/sensor_data`.
 
-### 依存(Python)
+### Dependency(Python)
 
 - jupyter
 - seaborn
 
-### 2章
+### Branch
 
-pandasやseabornのラッパーが存在するので，それらを用いると進めやすいかもしれない．
+Basically the package in branch `ch<n>` only works for `notebook/ch<n>*.ipynb`.

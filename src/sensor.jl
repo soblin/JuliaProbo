@@ -104,7 +104,7 @@ function apply_bias(camera::RealCamera, z::Vector{Float64})
     d = z[1]
     ϕ = z[2]
     d += d * camera.distance_bias_rate_std
-    ϕ += camera.direction_bias_stddev
+    ϕ += camera.direction_bias
     return [d, ϕ]
 end
 
