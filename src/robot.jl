@@ -248,4 +248,6 @@ function draw(robot::RealRobot, p::Plot{T}) where T
     p = plot!(x_his, y_his, color="black", lw=0.5)
     # camera
     draw(robot.sensor_, robot.pose_, p)
+    # agent
+    draw(robot.agent_, p)
 end

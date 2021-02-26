@@ -1,3 +1,5 @@
+using Plots
+
 @testset "ch04_sim02" begin
     xlim = [-5.0, 5.0]
     ylim = [-5.0, 5.0]
@@ -222,13 +224,13 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise=true, bias=true, occlusion=true)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    #gif(anim, "images/ch04_sim11.gif", fps=10)
+    gif(anim, "ch04_sim11.gif", fps=10)
 end

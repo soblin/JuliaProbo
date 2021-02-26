@@ -1,3 +1,5 @@
+using Plots
+
 @testset "ch03_robot11" begin
     straight_agent = Agent(0.2, 0.0)
     circling_agent = Agent(0.2, 10.0 / 180.0 * pi)
@@ -15,17 +17,17 @@
     push!(world, robot2)
     push!(world, m)
     dt = 0.1
-    for i = 1:50
+    anim = @animate for i = 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         obsv1 = observations(camera1, robot1.pose_)
         obsv2 = observations(camera2, robot2.pose_)
-        #p = draw(world, annota)
-        #plot(p)
+        p = draw(world, annota)
+        plot(p)
         v, ω = decision(straight_agent, obsv1)
         state_transition(robot1, v, ω, dt)
         v, ω = decision(circling_agent, obsv2)
         state_transition(robot2, v, ω, dt)
     end
-    #gif(anim, "ch3_robot11.gif", fps=10);
+    gif(anim, "ch3_robot11.gif", fps=10);
 end
