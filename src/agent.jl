@@ -25,6 +25,10 @@ function decision(agent::Agent, observation::Vector{Vector{Float64}})
     return agent.v_, agent.ω_
 end
 
+function decision(agent::EstimatorAgent, observation::Vector{Vector{Float64}})
+    return agent.v_, agent.ω_
+end
+
 function draw(agent::Agent, p::Plot{T}) where T end
 
 function draw(agent::EstimatorAgent, p::Plot{T}) where T

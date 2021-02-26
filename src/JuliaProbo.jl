@@ -6,7 +6,7 @@ import Distributions: Exponential, Normal, Uniform
 
 export AbstractObject, AbstractSensor, AbstractAgent, AbstractEstimator
 export draw
-export Agent, decision
+export Agent, EstimatorAgent, decision
 export IdealRobot, RealRobot, state_transition
 export Map
 export IdealCamera, RealCamera, observations
@@ -18,6 +18,6 @@ include("agent.jl")
 include("robot.jl")
 include("world.jl")
 include("sensor.jl")
-include("mcl.jl")
+include("mcl_estimator.jl")
 
 end # module
