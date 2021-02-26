@@ -58,6 +58,15 @@ function draw(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{Float64},
     end
 end
 
+struct Uniform2D
+    low::Vector{Float64}
+    upp::Vector{Float64}
+    uni::Uniform{Float64}
+    function Uniform2D(x::Vector{Float64}, y::Vector{Float64})
+        new([x[1], y[1]], [x[2], y[2]], Uniform())
+    end
+end
+
 mutable struct RealCamera <: AbstractSensor
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}
@@ -67,13 +76,18 @@ mutable struct RealCamera <: AbstractSensor
     direction_noise::Float64
     distance_bias_rate_std::Float64
     direction_bias::Float64
+    phantom_prob::Float64
+    phantom_distrib::Uniform2D
     function RealCamera(landmarks::Vector{Landmark},
                         distance_range=[0.5, 6.0],
                         direction_range=[-pi/3, pi/3];
                         distance_noise_rate=0.1,
                         direction_noise=pi/90,
                         distance_bias_rate_stddev=0.1,
-                        direction_bias_stddev=pi/90)
+                        direction_bias_stddev=pi/90,
+                        phantom_prob=0.0,
+                        phantom_range_x=[-5.0, 5.0],
+                        phantom_range_y=[-5.0, 5.0])
 
         new(landmarks,
             Vector{Vector{Float64}}(undef, 0),
@@ -82,7 +96,9 @@ mutable struct RealCamera <: AbstractSensor
             distance_noise_rate,
             direction_noise,
             rand(Normal(0.0, distance_bias_rate_stddev)),
-            rand(Normal(0.0, direction_bias_stddev))
+            rand(Normal(0.0, direction_bias_stddev)),
+            phantom_prob,
+            Uniform2D(phantom_range_x, phantom_range_y)
             )
     end
 end
@@ -108,12 +124,24 @@ function apply_bias(camera::RealCamera, z::Vector{Float64})
     return [d, ϕ]
 end
 
+function gen_phantom(dist::Uniform2D)
+    c = dist.upp - dist.low
+    x = [rand(dist.uni) for i in 1:2]
+    return dist.low .+ (x .* c)
+end
+
 function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, occlusion=false)
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
     for i in 1:n
         z = observation_function(camera_pose, camera.landmarks_[i].pos)
+        if phantom
+            if rand(Uniform()) < camera.phantom_prob
+                phantom_pos = gen_phantom(camera.phantom_distrib)
+                z = observation_function(camera_pose, phantom_pos)
+            end
+        end
         if visible(camera, z)
             if bias
                 z = apply_bias(camera, z)
