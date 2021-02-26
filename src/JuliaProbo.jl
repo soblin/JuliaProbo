@@ -4,7 +4,7 @@ import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
 import Random: rand
 import Distributions: Exponential, Normal, Uniform
 
-export AbstractObject, AbstractSensor
+export AbstractObject, AbstractSensor, AbstractAgent
 export draw
 export Agent, decision
 export IdealRobot, RealRobot, state_transition

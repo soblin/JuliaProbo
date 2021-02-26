@@ -2,13 +2,13 @@ using JuliaProbo
 
 mutable struct IdealRobot <: AbstractObject
     pose_::Vector{Float64}
-    agent_::Agent
+    agent_::AbstractAgent
     radius_::Float64
     color_::String
     poses_::Vector{Vector{Float64}}
     sensor_::Union{AbstractSensor, Nothing}
     function IdealRobot(pose::Vector{Float64},
-                        agent::Agent,
+                        agent::AbstractAgent,
                         sensor::Union{AbstractSensor, Nothing},
                         radius=0.05,
                         color="blue")
@@ -85,7 +85,7 @@ end
 
 mutable struct RealRobot <: AbstractObject
     pose_::Vector{Float64}
-    agent_::Agent
+    agent_::AbstractAgent
     radius_::Float64
     color_::String
     poses_::Vector{Vector{Float64}}
@@ -110,7 +110,7 @@ mutable struct RealRobot <: AbstractObject
     kidnap_distrib_::PoseUniform
     
     function RealRobot(pose::Vector{Float64},
-                       agent::Agent,
+                       agent::AbstractAgent,
                        sensor::Union{AbstractSensor, Nothing};
                        radius=0.05,
                        color="blue",
