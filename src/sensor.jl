@@ -78,6 +78,7 @@ mutable struct RealCamera <: AbstractSensor
     direction_bias::Float64
     phantom_prob::Float64
     phantom_distrib::Uniform2D
+    overlook_prob::Float64
     function RealCamera(landmarks::Vector{Landmark},
                         distance_range=[0.5, 6.0],
                         direction_range=[-pi/3, pi/3];
@@ -87,7 +88,8 @@ mutable struct RealCamera <: AbstractSensor
                         direction_bias_stddev=pi/90,
                         phantom_prob=0.0,
                         phantom_range_x=[-5.0, 5.0],
-                        phantom_range_y=[-5.0, 5.0])
+                        phantom_range_y=[-5.0, 5.0],
+                        overlook_prob=0.1)
 
         new(landmarks,
             Vector{Vector{Float64}}(undef, 0),
@@ -98,7 +100,8 @@ mutable struct RealCamera <: AbstractSensor
             rand(Normal(0.0, distance_bias_rate_stddev)),
             rand(Normal(0.0, direction_bias_stddev)),
             phantom_prob,
-            Uniform2D(phantom_range_x, phantom_range_y)
+            Uniform2D(phantom_range_x, phantom_range_y),
+            overlook_prob
             )
     end
 end
@@ -130,7 +133,15 @@ function gen_phantom(dist::Uniform2D)
     return dist.low .+ (x .* c)
 end
 
-function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, occlusion=false)
+function if_overlook(camera::RealCamera)
+    if rand(Uniform()) < camera.overlook_prob
+        return true
+    else
+        return false
+    end
+end
+
+function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, overlook=false, occlusion=false)
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
@@ -148,6 +159,9 @@ function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=fa
             end
             if noise
                 z = apply_noise(camera, z)
+            end
+            if overlook && if_overlook(camera)
+                continue
             end
             push!(observed, [z[1], z[2], camera.landmarks_[i].id])
         end
