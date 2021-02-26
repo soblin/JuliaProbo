@@ -108,15 +108,19 @@ function apply_bias(camera::RealCamera, z::Vector{Float64})
     return [d, ϕ]
 end
 
-function observations(camera::RealCamera, camera_pose::Vector{Float64})
+function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, occlusion=false)
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
     for i in 1:n
         z = observation_function(camera_pose, camera.landmarks_[i].pos)
         if visible(camera, z)
-            z = apply_bias(camera, z)
-            z = apply_noise(camera, z)
+            if bias
+                z = apply_bias(camera, z)
+            end
+            if noise
+                z = apply_noise(camera, z)
+            end
             push!(observed, [z[1], z[2], camera.landmarks_[i].id])
         end
     end
