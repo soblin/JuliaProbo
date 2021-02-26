@@ -79,6 +79,7 @@ mutable struct RealCamera <: AbstractSensor
     phantom_prob::Float64
     phantom_distrib::Uniform2D
     overlook_prob::Float64
+    occlusion_prob::Float64
     function RealCamera(landmarks::Vector{Landmark},
                         distance_range=[0.5, 6.0],
                         direction_range=[-pi/3, pi/3];
@@ -89,7 +90,8 @@ mutable struct RealCamera <: AbstractSensor
                         phantom_prob=0.0,
                         phantom_range_x=[-5.0, 5.0],
                         phantom_range_y=[-5.0, 5.0],
-                        overlook_prob=0.1)
+                        overlook_prob=0.1,
+                        occlusion_prob=0.0)
 
         new(landmarks,
             Vector{Vector{Float64}}(undef, 0),
@@ -101,7 +103,8 @@ mutable struct RealCamera <: AbstractSensor
             rand(Normal(0.0, direction_bias_stddev)),
             phantom_prob,
             Uniform2D(phantom_range_x, phantom_range_y),
-            overlook_prob
+            overlook_prob,
+            occlusion_prob
             )
     end
 end
@@ -141,6 +144,15 @@ function if_overlook(camera::RealCamera)
     end
 end
 
+function apply_occlusion(camera::RealCamera, z::Vector{Float64})
+    if rand(Uniform()) < camera.occlusion_prob
+        return [z[1] + rand(Uniform()) * (camera.distance_range[2] - z[1]),
+                z[2]]
+    else
+        return z
+    end
+end
+
 function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, overlook=false, occlusion=false)
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
@@ -153,15 +165,19 @@ function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=fa
                 z = observation_function(camera_pose, phantom_pos)
             end
         end
+        if overlook && if_overlook(camera)
+            # not added
+            continue
+        end
+        if occlusion
+            z = apply_occlusion(camera, z)
+        end
         if visible(camera, z)
             if bias
                 z = apply_bias(camera, z)
             end
             if noise
                 z = apply_noise(camera, z)
-            end
-            if overlook && if_overlook(camera)
-                continue
             end
             push!(observed, [z[1], z[2], camera.landmarks_[i].id])
         end
