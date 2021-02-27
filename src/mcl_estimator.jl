@@ -29,10 +29,10 @@ mutable struct Mcl <: AbstractEstimator
     end
 end
 
-function motion_update(mcl::Mcl, v::Float64, ω::Floa64, dt::Float64)
+function motion_update(mcl::Mcl, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i in 1:N
-        motion_update(mcl.particles_[i], v, ω, dt, motion_noise_rate_pdf)
+        motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
     end
 end
 
