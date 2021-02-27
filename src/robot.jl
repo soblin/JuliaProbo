@@ -51,6 +51,21 @@ function draw(robot::IdealRobot, p::Plot{T}) where T
     draw(robot.sensor_, robot.pose_, p)
 end
 
+function state_transition(cur_pose::Vector{Float64}, v::Float64, ω::Float64, dt::Float64)
+    θ = cur_pose[3]
+    new_pose = [0.0, 0.0, 0.0]
+    if abs(ω) < 1e-10
+        dpose = [v * cos(θ), v * sin(θ), ω] * dt
+        new_pose = cur_pose .+ dpose
+    else
+        dpose = [v / ω * ( sin(θ + ω * dt) - sin(θ)),
+                 v / ω * ( -cos(θ + ω * dt) + cos(θ)),
+                 ω * dt]
+        new_pose = cur_pose .+ dpose
+    end
+    return new_pose
+end
+
 function state_transition(robot::IdealRobot, v::Float64, ω::Float64, dt::Float64)
     θ = robot.pose_[3]
     new_pose = [0.0, 0.0, 0.0]
