@@ -42,6 +42,8 @@ mutable struct Mcl <: AbstractEstimator
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
     direction_dev::Float64
+    ml_::Particle
+    pose_::Vector{Float64}
     function Mcl(initial_pose::Vector{Float64},
                  num::Int64,
                  motion_noise_stds=
@@ -54,8 +56,16 @@ mutable struct Mcl <: AbstractEstimator
         new([Particle(initial_pose, 1.0/num) for i in 1:num],
             MvNormal([0.0, 0.0, 0.0, 0.0], cov),
             distance_dev_rate,
-            direction_dev)
+            direction_dev,
+            Particle(initial_pose, 0.0),
+            copy(initial_pose))
     end
+end
+
+function set_ml(mcl::Mcl)
+    i = findmax([p.weight_ for p in mcl.particles_])[2]
+    mcl.ml_ = copy(mcl.particles_[i])
+    mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
 function motion_update(mcl::Mcl, v::Float64, ω::Float64, dt::Float64)
@@ -71,6 +81,7 @@ function observation_update(mcl::Mcl, observation::Vector{Vector{Float64}}, envm
     for i in 1:N
         observation_update(mcl.particles_[i], observation, envmap, mcl.distance_dev_rate, mcl.direction_dev)
     end
+    set_ml(mcl)
     if resample
         resampling(mcl)
     end
@@ -109,4 +120,7 @@ function draw(mcl::Mcl, p::Plot{T}) where T
     vxs = [cos(p.pose_[3]) * 0.5 * p.weight_ * length(mcl.particles_) for p = mcl.particles_]
     vys = [sin(p.pose_[3]) * 0.5 * p.weight_ * length(mcl.particles_) for p = mcl.particles_]
     p = quiver!(xs, ys, quiver=(vxs, vys), color="blue", alpha=0.5)
+    pose = mcl.pose_
+    annota = "($(round(pose[1], sigdigits=3)), $(round(pose[2], sigdigits=3)), $(round(pose[3], sigdigits=3)))"
+    p = annotate!(pose[1]+1.0, pose[2]+1.0, text(annota, 10))
 end
