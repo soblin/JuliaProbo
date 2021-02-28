@@ -19,7 +19,7 @@ using Plots
     robot = RealRobot(initial_pose, circling, RealCamera(landmarks); color="red")
     push!(world, robot)
     push!(world, m)
-    anim = @animate for i in 1:10
+    anim = @animate for i in 1:5
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -27,5 +27,55 @@ using Plots
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl04.gif", fps=10)
+    gif(anim, "ch05_mcl05.gif", fps=10)
+end
+
+@testset "ch05_mcl07" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    world = World(xlim, ylim)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    estimator = Mcl(initial_pose, 100)
+    circling = EstimatorAgent(0.2, 10.0*pi/180, dt, estimator)
+    robot = RealRobot(initial_pose, circling, nothing; color="red")
+    push!(world, robot)
+    anim = @animate for i in 1:5
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(robot.sensor_, robot.pose_)
+        v, ω = decision(circling, z)
+        state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
+    end
+    gif(anim, "ch05_mcl07.gif", fps=10)
+end
+
+@testset "ch05_mcl09" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    landmarks = [Landmark([-4.0, 2.0], 0), Landmark([2.0, -3.0], 1), Landmark([3.0, 3.0], 2)]
+    m = Map()
+    push!(m, landmarks)
+    world = World(xlim, ylim)
+    push!(world, m)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    estimator = Mcl(initial_pose, 100)
+    circling_agent = EstimatorAgent(0.2, 10.0*pi/180, dt, estimator)
+    robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color="red")
+    push!(world, robot)
+    anim = @animate for i in 1:5
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(robot.sensor_, robot.pose_; noise=true, bias=true)
+        v, ω = decision(circling_agent, z, m)
+        state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
+    end
+    gif(anim, "ch05_mcl09.gif", fps=10)
 end
