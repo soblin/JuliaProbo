@@ -1,4 +1,5 @@
 using Plots
+ENV["GKSwstype"]="nul"
 
 @testset "ch04_sim02" begin
     xlim = [-5.0, 5.0]
@@ -15,11 +16,11 @@ using Plots
     end
 
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota);
-        #plot(p);
+        p = draw(world, annota);
+        plot(p);
         for j in 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
             @assert obsv == nothing
@@ -27,7 +28,7 @@ using Plots
             state_transition(robots[j], v, ω, dt; move_noise=true)
         end
     end
-    #gif(anim, "ch04_sim02.gif", fps=10);
+    gif(anim, "ch04_sim02.gif", fps=10);
 end
 
 @testset "ch04_sim03" begin
@@ -40,9 +41,9 @@ end
     biased_robot = RealRobot([0.0, 0.0, 0.0], circling_agent, nothing; radius=0.05, color="red", bias_rate_stds=(0.2, 0.2))
     push!(world, biased_robot)
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         obsv1 = observations(nobias_robot.sensor_, nobias_robot.pose_)
         v1, ω1 = decision(circling_agent, obsv1)
         obsv2 = observations(biased_robot.sensor_, biased_robot.pose_)
@@ -50,7 +51,7 @@ end
         state_transition(nobias_robot, v1, ω1, dt)
         state_transition(biased_robot, v2, ω2, dt; vel_bias_noise=true)
     end
-    #gif(anim, "images/ch04_sim03.gif", fps=10)
+    gif(anim, "ch04_sim03.gif", fps=10)
 end
 
 @testset "ch04_sim04" begin
@@ -72,9 +73,9 @@ end
     push!(world, ideal_robot)
 
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         for j in 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
             v, ω = decision(circling_agent, obsv)
@@ -84,7 +85,7 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    #gif(anim, "images/ch04_sim04.gif", fps=10)
+    gif(anim, "ch04_sim04.gif", fps=10)
 end
 
 @testset "ch04_sim05" begin
@@ -105,9 +106,9 @@ end
     push!(world, ideal_robot)
 
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         for j in 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
             v, ω = decision(circling_agent, obsv)
@@ -117,7 +118,7 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    #gif(anim, "images/ch04_sim05.gif", fps=10)
+    gif(anim, "ch04_sim05.gif", fps=10)
 end
 
 @testset "ch04_sim07" begin
@@ -132,16 +133,16 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota)
-        #plot(p)
+        p = draw(world, annota)
+        plot(p)
         obsv = observations(robot.sensor_, robot.pose_; noise=true)
         v, ω = decision(circling_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    #gif(anim, "images/ch04_sim07.gif", fps=10)
+    gif(anim, "ch04_sim07.gif", fps=10)
 end
 
 @testset "ch04_sim08" begin
@@ -156,16 +157,16 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota)
-        #plot(p)
+        p = draw(world, annota)
+        plot(p)
         obsv = observations(robot.sensor_, robot.pose_; noise=true, bias=true)
         v, ω = decision(straight_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    #gif(anim, "images/ch04_sim08.gif", fps=10)
+    gif(anim, "ch04_sim08.gif", fps=10)
 end
 
 @testset "ch04_sim09" begin
@@ -180,10 +181,10 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    for i in 1:100
+    anim = @animate for i in 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise=true, bias=true, phantom=true)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
@@ -202,10 +203,10 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    for i in 1:50
+    anim = @animate for i in 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        #p = draw(world, annota)
+        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise=true, bias=true, overlook=true)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)

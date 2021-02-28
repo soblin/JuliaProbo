@@ -1,4 +1,5 @@
 using Plots
+ENV["GKSwstype"]="nul"
 
 @testset "ch03_robot11" begin
     straight_agent = Agent(0.2, 0.0)
