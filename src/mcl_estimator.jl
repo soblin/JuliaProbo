@@ -9,6 +9,11 @@ mutable struct Particle
     end
 end
 
+function Base.copy(p::Particle)
+    p_ = Particle(p.pose_, p.weight_)
+    return p_
+end
+
 function motion_update(p::Particle, v::Float64, ω::Float64, dt::Float64, mv::MvNormal{Float64})
     noises = rand(mv)
     noised_v = v + noises[1] * sqrt(abs(v)/dt) + noises[2] * sqrt(abs(ω)/dt)
@@ -64,6 +69,24 @@ function observation_update(mcl::Mcl, observation::Vector{Vector{Float64}}, envm
     N = length(mcl.particles_)
     for i in 1:N
         observation_update(mcl.particles_[i], observation, envmap, mcl.distance_dev_rate, mcl.direction_dev)
+    end
+    resampling(mcl)
+end
+
+function resampling(mcl::Mcl)
+    N = length(mcl.particles_)
+    old_particles = mcl.particles_
+    ws = [p.weight_ for p in old_particles]
+    if sum(ws) < 1e-100
+        ws = [e + 1e-100 for e in ws]
+    end
+    ws = ws ./ sum(ws)
+    
+    ps = sample(old_particles, Weights(ws), length(old_particles))
+    mcl.particles_ = [copy(p) for p in ps]
+
+    for i in 1:N
+        mcl.particles_[i].weight_ = 1.0 / N
     end
 end
 
