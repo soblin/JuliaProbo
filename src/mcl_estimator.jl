@@ -20,7 +20,8 @@ mutable struct Mcl <: AbstractEstimator
     motion_noise_rate_pdf::MvNormal{Float64}
     function Mcl(initial_pose::Vector{Float64},
                  num::Int64,
-                 motion_noise_stds::Dict{String, Float64})
+                 motion_noise_stds=
+                 Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2))
         v = motion_noise_stds
         cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
         
@@ -39,7 +40,7 @@ end
 function draw(mcl::Mcl, p::Plot{T}) where T
     xs = [p.pose_[1] for p = mcl.particles_]
     ys = [p.pose_[2] for p = mcl.particles_]
-    vxs = [cos(p.pose_[3]) for p = mcl.particles_]
-    vys = [sin(p.pose_[3]) for p = mcl.particles_]
+    vxs = [cos(p.pose_[3]) * 0.5 for p = mcl.particles_]
+    vys = [sin(p.pose_[3]) * 0.5 for p = mcl.particles_]
     p = quiver!(xs, ys, quiver=(vxs, vys), color="blue", alpha=0.5)
 end

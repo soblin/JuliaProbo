@@ -55,7 +55,7 @@ end
 
 function draw(world::World, annota::String)
     p = plot(aspect_ratio=:equal, xlim=world.xlim_, ylim=world.ylim_)
-    xpos = (world.xlim_[1] + world.xlim_[2]) / 2.0
+    xpos = world.xlim_[1] + (world.xlim_[2] - world.xlim_[1]) * 0.2
     ypos = world.ylim_[2] - 0.1 * (world.ylim_[2] - world.ylim_[1])
     if annota != nothing
         p = annotate!(xpos, ypos, annota)
