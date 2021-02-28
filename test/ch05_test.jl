@@ -131,7 +131,7 @@ end
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise=true, bias=true)
-        v, ω = decision(circling_agent, z, envmap)
+        v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
     gif(anim, "ch05_mcl12.gif", fps=10)

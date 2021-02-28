@@ -35,11 +35,12 @@ function decision(agent::EstimatorAgent, observation::Nothing)
     return agent.v_, agent.ω_
 end
 
-function decision(agent::EstimatorAgent, observation::Vector{Vector{Float64}}, envmap::Map)
+function decision(agent::EstimatorAgent, observation::Vector{Vector{Float64}}, envmap::Map;
+                  resample=false)
     estimator = agent.estimator_
     motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
     agent.prev_v_, agent.prev_ω_ = agent.v_, agent.ω_
-    observation_update(agent.estimator_, observation, envmap)
+    observation_update(agent.estimator_, observation, envmap; resample=resample)
     return agent.v_, agent.ω_
 end
 
