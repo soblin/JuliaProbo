@@ -35,6 +35,14 @@ function decision(agent::EstimatorAgent, observation::Nothing)
     return agent.v_, agent.ω_
 end
 
+function decision(agent::EstimatorAgent, observation::Vector{Vector{Float64}})
+    estimator = agent.estimator_
+    motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
+    agent.prev_v_, agent.prev_ω_ = agent.v_, agent.ω_
+    observation_update(agent.estimator_, observation)
+    return agent.v_, agent.ω_
+end
+
 function draw(agent::Agent, p::Plot{T}) where T end
 
 function draw(agent::EstimatorAgent, p::Plot{T}) where T

@@ -15,6 +15,10 @@ function motion_update(p::Particle, v::Float64, ω::Float64, dt::Float64, mv::Mv
     p.pose_ = state_transition(p.pose_, noised_v, noised_ω, dt)
 end
 
+function observation_update(p::Particle, observation::Vector{Vector{Float64}})
+    return
+end
+
 mutable struct Mcl <: AbstractEstimator
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
@@ -34,6 +38,13 @@ function motion_update(mcl::Mcl, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i in 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
+    end
+end
+
+function observation_update(mcl::Mcl, observation::Vector{Vector{Float64}})
+    N = length(mcl.particles_)
+    for i in 1:N
+        observation_update(mcl.particles_[i], observation)
     end
 end
 
