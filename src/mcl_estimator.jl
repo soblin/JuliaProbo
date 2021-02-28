@@ -77,19 +77,29 @@ function observation_update(mcl::Mcl, observation::Vector{Vector{Float64}}, envm
 end
 
 function resampling(mcl::Mcl)
-    N = length(mcl.particles_)
-    old_particles = mcl.particles_
-    ws = [p.weight_ for p in old_particles]
-    if sum(ws) < 1e-100
+    ws = cumsum([p.weight_ for p in mcl.particles_])
+
+    if ws[end] < 1e-100
         ws = [e + 1e-100 for e in ws]
     end
-    ws = ws ./ sum(ws)
-    
-    ps = sample(old_particles, Weights(ws), length(old_particles))
-    mcl.particles_ = [copy(p) for p in ps]
 
-    for i in 1:N
-        mcl.particles_[i].weight_ = 1.0 / N
+    step = ws[end] / length(ws)
+    r = rand(Uniform(0.0, step))
+    cur_pos = 1
+    ps = []
+
+    while length(ps) < length(mcl.particles_)
+        if r < ws[cur_pos]
+            push!(ps, copy(mcl.particles_[cur_pos]))
+            r += step
+        else
+            cur_pos += 1
+        end
+    end
+
+    mcl.particles_ = copy(ps)
+    for i in 1:length(ps)
+        mcl.particles_[i].weight_ = 1.0 / length(ps)
     end
 end
 
