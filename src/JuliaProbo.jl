@@ -3,7 +3,7 @@ module JuliaProbo
 import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
 import Random: rand
 import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov
-import LinearAlgebra: Diagonal
+import LinearAlgebra: Diagonal, I
 import StatsBase: sample, Weights
 import StatsPlots: covellipse!
 
@@ -12,7 +12,7 @@ export draw
 export Agent, EstimatorAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, observations, observation_function
-export Landmark, Map, World, push!
+export Landmark, Map, World, push!, getindex
 export Particle, copy, Mcl, KalmanFilter, motion_update
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)

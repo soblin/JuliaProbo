@@ -48,3 +48,43 @@ ENV["GKSwstype"]="nul"
     end
     gif(anim, "ch06_kf3.gif", fps=10)
 end
+
+@testset "ch06_kf4" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks = [Landmark([-4.0, 2.0], 0), Landmark([2.0, -3.0], 1), Landmark([3.0, 3.0], 2)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = World(xlim, ylim)
+    push!(world, envmap)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    n_robots = 3
+    estimators = [KalmanFilter(envmap, initial_pose),
+        KalmanFilter(envmap, initial_pose),
+        KalmanFilter(envmap, initial_pose)]
+    agents = [EstimatorAgent(0.2, 10.0*pi/180, dt, estimators[1]),
+        EstimatorAgent(0.1, 0.0, dt, estimators[2]),
+        EstimatorAgent(0.1, -3.0/180*pi, dt, estimators[3])]
+    robots = [RealRobot(initial_pose, agents[1], RealCamera(landmarks); color="red"),
+        RealRobot(initial_pose, agents[2], RealCamera(landmarks); color="red"),
+        RealRobot(initial_pose, agents[3], RealCamera(landmarks); color="red")]
+    for i in 1:n_robots
+        push!(world, robots[i])
+    end
+    
+    anim = @animate for i in 1:5
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        for i in 1:n_robots
+            z = observations(robots[i].sensor_, robots[i].pose_; noise=true, bias=true)
+            v, ω = decision(agents[i], z, envmap)
+            state_transition(robots[i], v, ω, dt; move_noise=true, vel_bias_noise=true)
+        end
+    end
+        gif(anim, "ch06_kf4.gif", fps=10)
+end

@@ -36,6 +36,10 @@ function draw(map::Map, p::Plot{T}) where T
     end
 end
 
+function Base.getindex(map::Map, index::Int)
+    return map.landmarks_[index]
+end
+
 mutable struct World
     objects_::Vector{AbstractObject}
     xlim_::Vector{Float64}
