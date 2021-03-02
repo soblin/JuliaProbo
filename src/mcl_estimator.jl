@@ -76,7 +76,7 @@ function motion_update(mcl::Mcl, v::Float64, ω::Float64, dt::Float64)
 end
 
 function observation_update(mcl::Mcl, observation::Vector{Vector{Float64}}, envmap::Map;
-                            resample=false)
+                            resample=true)
     N = length(mcl.particles_)
     for i in 1:N
         observation_update(mcl.particles_[i], observation, envmap, mcl.distance_dev_rate, mcl.direction_dev)

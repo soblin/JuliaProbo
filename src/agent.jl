@@ -36,11 +36,15 @@ function decision(agent::EstimatorAgent, observation::Nothing)
 end
 
 function decision(agent::EstimatorAgent, observation::Vector{Vector{Float64}}, envmap::Map;
-                  resample=false)
+                  resample=true)
     estimator = agent.estimator_
     motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
     agent.prev_v_, agent.prev_ω_ = agent.v_, agent.ω_
-    observation_update(agent.estimator_, observation, envmap; resample=resample)
+    if typeof(agent.estimator_) == Mcl
+        observation_update(agent.estimator_, observation, envmap; resample=resample)
+    elseif typeof(agent.estimator_) == KalmanFilter
+        observation_update(agent.estimator_, observation)
+    end
     return agent.v_, agent.ω_
 end
 
