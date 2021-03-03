@@ -1,5 +1,11 @@
 using JuliaProbo
+using Plots
 using Test
+using JuliaFormatter
+
+ENV["GKSwstype"] = "nul"
+
+format("../")
 
 include("ch03_test.jl")
 include("ch04_test.jl")

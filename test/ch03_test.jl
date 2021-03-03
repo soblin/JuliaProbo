@@ -1,6 +1,3 @@
-using Plots
-ENV["GKSwstype"] = "nul"
-
 @testset "ch03_robot11" begin
     straight_agent = Agent(0.2, 0.0)
     circling_agent = Agent(0.2, 10.0 / 180.0 * pi)
@@ -31,5 +28,5 @@ ENV["GKSwstype"] = "nul"
         v, ω = decision(circling_agent, obsv2)
         state_transition(robot2, v, ω, dt)
     end
-    gif(anim, "ch3_robot11.gif", fps = 10)
+    #gif(anim, "ch3_robot11.gif", fps=10);
 end

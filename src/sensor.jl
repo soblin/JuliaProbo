@@ -1,5 +1,3 @@
-using JuliaProbo
-
 mutable struct IdealCamera <: AbstractSensor
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}

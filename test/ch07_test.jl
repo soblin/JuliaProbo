@@ -1,5 +1,3 @@
-ENV["GKSwstype"] = "nul"
-
 @testset "ch07_kdl_mcl" begin
     dt = 0.1
     # environment
@@ -25,5 +23,5 @@ ENV["GKSwstype"] = "nul"
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    gif(anim, "ch07_kdl_mcl.gif", fps = 10)
+    #gif(anim, "ch07_kdl_mcl.gif", fps=10)
 end
