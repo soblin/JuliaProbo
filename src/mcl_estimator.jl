@@ -1,5 +1,3 @@
-using JuliaProbo
-
 mutable struct Particle
     pose_::Vector{Float64}
     weight_::Float64

@@ -1,6 +1,3 @@
-using JuliaProbo
-ENV["GKSwstype"]="nul"
-
 @testset "ch06_kf3" begin
     dt = 0.1
     # environment
@@ -46,7 +43,7 @@ ENV["GKSwstype"]="nul"
         v3, ω3 = decision(agent3, z3, envmap)
         state_transition(robot3, v3, ω3, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch06_kf3.gif", fps=10)
+    #gif(anim, "ch06_kf3.gif", fps=10)
 end
 
 @testset "ch06_kf4" begin
@@ -86,5 +83,5 @@ end
             state_transition(robots[i], v, ω, dt; move_noise=true, vel_bias_noise=true)
         end
     end
-        gif(anim, "ch06_kf4.gif", fps=10)
+    #gif(anim, "ch06_kf4.gif", fps=10)
 end

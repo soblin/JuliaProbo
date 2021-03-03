@@ -1,6 +1,3 @@
-using Plots
-ENV["GKSwstype"]="nul"
-
 @testset "ch05_mcl05" begin
     motion_noise_stds = Dict("vv" => 0.01, "vω" => 0.02, "ωv" => 0.03, "ωω" => 0.04)
     dt = 0.1
@@ -28,7 +25,7 @@ ENV["GKSwstype"]="nul"
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl05.gif", fps=10)
+    #gif(anim, "ch05_mcl05.gif", fps=10)
 end
 
 @testset "ch05_mcl07" begin
@@ -51,7 +48,7 @@ end
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl07.gif", fps=10)
+    #gif(anim, "ch05_mcl07.gif", fps=10)
 end
 
 @testset "ch05_mcl09" begin
@@ -78,7 +75,7 @@ end
         v, ω = decision(circling_agent, z, m)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl09.gif", fps=10)
+    #gif(anim, "ch05_mcl09.gif", fps=10)
 end
 
 @testset "ch05_mcl11" begin
@@ -106,7 +103,7 @@ end
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl11.gif", fps=10)
+    #gif(anim, "ch05_mcl11.gif", fps=10)
 end
 
 @testset "ch05_mcl12" begin
@@ -134,7 +131,7 @@ end
         v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl12.gif", fps=10)
+    #gif(anim, "ch05_mcl12.gif", fps=10)
 end
 
 @testset "ch05_mcl13" begin
@@ -162,7 +159,7 @@ end
         v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl13.gif", fps=10)
+    #gif(anim, "ch05_mcl13.gif", fps=10)
 end
 
 @testset "ch05_mcl14" begin
@@ -190,5 +187,5 @@ end
         v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch05_mcl14.gif", fps=10)
+    #gif(anim, "ch05_mcl14.gif", fps=10)
 end

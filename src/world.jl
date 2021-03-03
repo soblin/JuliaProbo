@@ -1,5 +1,3 @@
-using JuliaProbo
-
 struct Landmark <: AbstractObject
     pos::Vector{Float64}
     id::Int64

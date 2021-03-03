@@ -1,6 +1,3 @@
-using Plots
-ENV["GKSwstype"]="nul"
-
 @testset "ch04_sim02" begin
     xlim = [-5.0, 5.0]
     ylim = [-5.0, 5.0]
@@ -28,7 +25,7 @@ ENV["GKSwstype"]="nul"
             state_transition(robots[j], v, ω, dt; move_noise=true)
         end
     end
-    gif(anim, "ch04_sim02.gif", fps=10);
+    #gif(anim, "ch04_sim02.gif", fps=10);
 end
 
 @testset "ch04_sim03" begin
@@ -51,7 +48,7 @@ end
         state_transition(nobias_robot, v1, ω1, dt)
         state_transition(biased_robot, v2, ω2, dt; vel_bias_noise=true)
     end
-    gif(anim, "ch04_sim03.gif", fps=10)
+    #gif(anim, "ch04_sim03.gif", fps=10)
 end
 
 @testset "ch04_sim04" begin
@@ -85,7 +82,7 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    gif(anim, "ch04_sim04.gif", fps=10)
+    #gif(anim, "ch04_sim04.gif", fps=10)
 end
 
 @testset "ch04_sim05" begin
@@ -118,7 +115,7 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    gif(anim, "ch04_sim05.gif", fps=10)
+    #gif(anim, "ch04_sim05.gif", fps=10)
 end
 
 @testset "ch04_sim07" begin
@@ -142,7 +139,7 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    gif(anim, "ch04_sim07.gif", fps=10)
+    #gif(anim, "ch04_sim07.gif", fps=10)
 end
 
 @testset "ch04_sim08" begin
@@ -166,7 +163,7 @@ end
         v, ω = decision(straight_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    gif(anim, "ch04_sim08.gif", fps=10)
+    #gif(anim, "ch04_sim08.gif", fps=10)
 end
 
 @testset "ch04_sim09" begin
@@ -233,5 +230,5 @@ end
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
     end
-    gif(anim, "ch04_sim11.gif", fps=10)
+    #gif(anim, "ch04_sim11.gif", fps=10)
 end

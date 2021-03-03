@@ -1,5 +1,3 @@
-using JuliaProbo
-
 mutable struct KalmanFilter <: AbstractEstimator
     belief_::MvNormal{Float64}
     motion_noise_stds::Dict{String, Float64}

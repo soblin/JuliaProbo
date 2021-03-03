@@ -1,5 +1,3 @@
-using JuliaProbo
-
 mutable struct Agent <: AbstractAgent
     v_::Float64
     ω_::Float64

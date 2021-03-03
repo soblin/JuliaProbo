@@ -1,5 +1,3 @@
-using JuliaProbo
-
 mutable struct IdealRobot <: AbstractObject
     pose_::Vector{Float64}
     agent_::AbstractAgent
