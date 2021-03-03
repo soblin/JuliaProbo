@@ -1,41 +1,42 @@
-using JuliaProbo
-
 mutable struct IdealCamera <: AbstractSensor
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}
     distance_range::Vector{Float64}
     direction_range::Vector{Float64}
-    function IdealCamera(landmark::Vector{Landmark},
-                         distance_range=[0.5, 6.0],
-                         direction_range=[-pi/3, pi/3])
-        new(landmark,
-            Vector{Vector{Float64}}[],
-            distance_range,
-            direction_range)
+    function IdealCamera(
+        landmark::Vector{Landmark},
+        distance_range = [0.5, 6.0],
+        direction_range = [-pi / 3, pi / 3],
+    )
+        new(landmark, Vector{Vector{Float64}}[], distance_range, direction_range)
     end
 end
 
 function visible(camera::IdealCamera, polarpos::Vector{Float64})
     return camera.distance_range[1] <= polarpos[1] <= camera.distance_range[2] &&
-        camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
+           camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
 end
 
 function observation_function(camera_pose::Vector{Float64}, landmark_pos::Vector{Float64})
     diff = landmark_pos .- camera_pose[1:2]
     ϕ = atan(diff[2], diff[1]) - camera_pose[3]
-    while ϕ >= pi; ϕ -= 2 * pi end
-    while ϕ < -pi; ϕ += 2 * pi end
+    while ϕ >= pi
+        ϕ -= 2 * pi
+    end
+    while ϕ < -pi
+        ϕ += 2 * pi
+    end
     return [sqrt(sum(diff .* diff)), ϕ]
 end
 
-function observations(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{Float64})
+function observations(camera::Union{IdealCamera,Nothing}, camera_pose::Vector{Float64})
     if typeof(camera) == Nothing
         return nothing
     end
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
-    for i in 1:n
+    for i = 1:n
         z = observation_function(camera_pose, camera.landmarks_[i].pos)
         if visible(camera, z)
             push!(observed, copy(z))
@@ -45,16 +46,20 @@ function observations(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{F
     return observed
 end
 
-function draw(camera::Union{IdealCamera, Nothing}, camera_pose::Vector{Float64}, p::Plot{T}) where T
+function draw(
+    camera::Union{IdealCamera,Nothing},
+    camera_pose::Vector{Float64},
+    p::Plot{T},
+) where {T}
     if camera == nothing
         return
     end
-    for obsv = camera.last_observation_
+    for obsv in camera.last_observation_
         x, y, θ = camera_pose
         distance, direction = obsv[1], obsv[2]
         lx = x + distance * cos(direction + θ)
         ly = y + distance * sin(direction + θ)
-        p = plot!([x, lx], [y, ly], color="pink", legend=nothing)
+        p = plot!([x, lx], [y, ly], color = "pink", legend = nothing)
     end
 end
 
@@ -80,20 +85,23 @@ mutable struct RealCamera <: AbstractSensor
     phantom_distrib::Uniform2D
     overlook_prob::Float64
     occlusion_prob::Float64
-    function RealCamera(landmarks::Vector{Landmark},
-                        distance_range=[0.5, 6.0],
-                        direction_range=[-pi/3, pi/3];
-                        distance_noise_rate=0.1,
-                        direction_noise=pi/90,
-                        distance_bias_rate_stddev=0.1,
-                        direction_bias_stddev=pi/90,
-                        phantom_prob=0.0,
-                        phantom_range_x=[-5.0, 5.0],
-                        phantom_range_y=[-5.0, 5.0],
-                        overlook_prob=0.1,
-                        occlusion_prob=0.0)
+    function RealCamera(
+        landmarks::Vector{Landmark},
+        distance_range = [0.5, 6.0],
+        direction_range = [-pi / 3, pi / 3];
+        distance_noise_rate = 0.1,
+        direction_noise = pi / 90,
+        distance_bias_rate_stddev = 0.1,
+        direction_bias_stddev = pi / 90,
+        phantom_prob = 0.0,
+        phantom_range_x = [-5.0, 5.0],
+        phantom_range_y = [-5.0, 5.0],
+        overlook_prob = 0.1,
+        occlusion_prob = 0.0,
+    )
 
-        new(landmarks,
+        new(
+            landmarks,
             Vector{Vector{Float64}}(undef, 0),
             distance_range,
             direction_range,
@@ -104,14 +112,14 @@ mutable struct RealCamera <: AbstractSensor
             phantom_prob,
             Uniform2D(phantom_range_x, phantom_range_y),
             overlook_prob,
-            occlusion_prob
-            )
+            occlusion_prob,
+        )
     end
 end
 
 function visible(camera::RealCamera, polarpos::Vector{Float64})
     return camera.distance_range[1] <= polarpos[1] <= camera.distance_range[2] &&
-        camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
+           camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
 end
 
 function apply_noise(camera::RealCamera, z::Vector{Float64})
@@ -132,7 +140,7 @@ end
 
 function gen_phantom(dist::Uniform2D)
     c = dist.upp - dist.low
-    x = [rand(dist.uni) for i in 1:2]
+    x = [rand(dist.uni) for i = 1:2]
     return dist.low .+ (x .* c)
 end
 
@@ -146,18 +154,25 @@ end
 
 function apply_occlusion(camera::RealCamera, z::Vector{Float64})
     if rand(Uniform()) < camera.occlusion_prob
-        return [z[1] + rand(Uniform()) * (camera.distance_range[2] - z[1]),
-                z[2]]
+        return [z[1] + rand(Uniform()) * (camera.distance_range[2] - z[1]), z[2]]
     else
         return z
     end
 end
 
-function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=false, bias=false, phantom=false, overlook=false, occlusion=false)
+function observations(
+    camera::RealCamera,
+    camera_pose::Vector{Float64};
+    noise = false,
+    bias = false,
+    phantom = false,
+    overlook = false,
+    occlusion = false,
+)
     n = size(camera.landmarks_)[1]
     observed = [[1.0]]
     pop!(observed)
-    for i in 1:n
+    for i = 1:n
         z = observation_function(camera_pose, camera.landmarks_[i].pos)
         if phantom
             if rand(Uniform()) < camera.phantom_prob
@@ -186,12 +201,12 @@ function observations(camera::RealCamera, camera_pose::Vector{Float64}; noise=fa
     return observed
 end
 
-function draw(camera::RealCamera, camera_pose::Vector{Float64}, p::Plot{T}) where T
-    for obsv = camera.last_observation_
+function draw(camera::RealCamera, camera_pose::Vector{Float64}, p::Plot{T}) where {T}
+    for obsv in camera.last_observation_
         x, y, θ = camera_pose
         distance, direction = obsv[1], obsv[2]
         lx = x + distance * cos(direction + θ)
         ly = y + distance * sin(direction + θ)
-        p = plot!([x, lx], [y, ly], color="pink", legend=nothing)
+        p = plot!([x, lx], [y, ly], color = "pink", legend = nothing)
     end
 end
