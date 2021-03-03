@@ -6,47 +6,45 @@ mutable struct IdealRobot <: AbstractObject
     radius_::Float64
     color_::String
     poses_::Vector{Vector{Float64}}
-    sensor_::Union{AbstractSensor, Nothing}
-    function IdealRobot(pose::Vector{Float64},
-                        agent::AbstractAgent,
-                        sensor::Union{AbstractSensor, Nothing},
-                        radius=0.05,
-                        color="blue")
+    sensor_::Union{AbstractSensor,Nothing}
+    function IdealRobot(
+        pose::Vector{Float64},
+        agent::AbstractAgent,
+        sensor::Union{AbstractSensor,Nothing},
+        radius = 0.05,
+        color = "blue",
+    )
         if typeof(sensor) == Nothing
-            new([pose[1], pose[2], pose[3]],
-                agent,
-                radius,
-                color,
-                [copy(pose)],
-                nothing)
+            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], nothing)
         else
-            new([pose[1], pose[2], pose[3]],
-                agent,
-                radius,
-                color,
-                [copy(pose)],
-                sensor)
+            new([pose[1], pose[2], pose[3]], agent, radius, color, [copy(pose)], sensor)
         end
     end
 end
 
-function draw(robot::IdealRobot, p::Plot{T}) where T
+function draw(robot::IdealRobot, p::Plot{T}) where {T}
     # robot
-    p = scatter!([robot.pose_[1]], [robot.pose_[2]],
-                 markersize=robot.radius_ * 100,
-                 color=robot.color_,
-                 markeralpha=0.5,
-                 legend=nothing,
-                 aspect_ratio=:equal)
+    p = scatter!(
+        [robot.pose_[1]],
+        [robot.pose_[2]],
+        markersize = robot.radius_ * 100,
+        color = robot.color_,
+        markeralpha = 0.5,
+        legend = nothing,
+        aspect_ratio = :equal,
+    )
     θ = robot.pose_[3]
     # pose
-    p = quiver!([robot.pose_[1]], [robot.pose_[2]],
-                quiver=([robot.radius_ * cos(θ) * 5], [robot.radius_ * sin(θ) * 5]),
-                color="black")
+    p = quiver!(
+        [robot.pose_[1]],
+        [robot.pose_[2]],
+        quiver = ([robot.radius_ * cos(θ) * 5], [robot.radius_ * sin(θ) * 5]),
+        color = "black",
+    )
     # traj
     x_his = [pose[1] for pose in robot.poses_]
     y_his = [pose[2] for pose in robot.poses_]
-    p = plot!(x_his, y_his, color="black", lw=0.5)
+    p = plot!(x_his, y_his, color = "black", lw = 0.5)
     # camera
     draw(robot.sensor_, robot.pose_, p)
 end
@@ -58,9 +56,11 @@ function state_transition(cur_pose::Vector{Float64}, v::Float64, ω::Float64, dt
         dpose = [v * cos(θ), v * sin(θ), ω] * dt
         new_pose = cur_pose .+ dpose
     else
-        dpose = [v / ω * ( sin(θ + ω * dt) - sin(θ)),
-                 v / ω * ( -cos(θ + ω * dt) + cos(θ)),
-                 ω * dt]
+        dpose = [
+            v / ω * (sin(θ + ω * dt) - sin(θ)),
+            v / ω * (-cos(θ + ω * dt) + cos(θ)),
+            ω * dt,
+        ]
         new_pose = cur_pose .+ dpose
     end
     return new_pose
@@ -73,9 +73,11 @@ function state_transition(robot::IdealRobot, v::Float64, ω::Float64, dt::Float6
         dpose = [v * cos(θ), v * sin(θ), ω] * dt
         new_pose = robot.pose_ .+ dpose
     else
-        dpose = [v / ω * ( sin(θ + ω * dt) - sin(θ)),
-                 v / ω * ( -cos(θ + ω * dt) + cos(θ)),
-                 ω * dt]
+        dpose = [
+            v / ω * (sin(θ + ω * dt) - sin(θ)),
+            v / ω * (-cos(θ + ω * dt) + cos(θ)),
+            ω * dt,
+        ]
         new_pose = robot.pose_ .+ dpose
     end
     push!(robot.poses_, copy(robot.pose_))
@@ -88,13 +90,13 @@ struct PoseUniform
     upp::Vector{Float64}
     uni::Uniform{Float64}
     function PoseUniform(xlim::Vector{Float64}, ylim::Vector{Float64})
-        new([xlim[1], ylim[1], 0], [xlim[2], ylim[2], 2*pi], Uniform())
+        new([xlim[1], ylim[1], 0], [xlim[2], ylim[2], 2 * pi], Uniform())
     end
 end
 
 function uniform(mv::PoseUniform)
     c = mv.upp - mv.low
-    x = [rand(mv.uni) for i in 1:3]
+    x = [rand(mv.uni) for i = 1:3]
     return mv.low .+ (x .* c)
 end
 
@@ -104,7 +106,7 @@ mutable struct RealRobot <: AbstractObject
     radius_::Float64
     color_::String
     poses_::Vector{Vector{Float64}}
-    sensor_::Union{AbstractSensor, Nothing}
+    sensor_::Union{AbstractSensor,Nothing}
     # motion uncertainty
     ## movement noise
     noise_::Exponential{Float64}
@@ -123,27 +125,29 @@ mutable struct RealRobot <: AbstractObject
     kidnap_noise_::Exponential{Float64}
     time_until_kidnap_::Float64
     kidnap_distrib_::PoseUniform
-    
-    function RealRobot(pose::Vector{Float64},
-                       agent::AbstractAgent,
-                       sensor::Union{AbstractSensor, Nothing};
-                       radius=0.05,
-                       color="blue",
-                       noise_per_meter=5.0,
-                       noise_std=pi/60,
-                       bias_rate_stds=(0.1, 0.1),
-                       expected_stuck_time=1e100,
-                       expected_escape_time=1e-100,
-                       expected_kidnap_time=1e100,
-                       kidnap_range_x=[-5.0, 5.0],
-                       kidnap_range_y=[-5.0, 5.0]
-                       )
+
+    function RealRobot(
+        pose::Vector{Float64},
+        agent::AbstractAgent,
+        sensor::Union{AbstractSensor,Nothing};
+        radius = 0.05,
+        color = "blue",
+        noise_per_meter = 5.0,
+        noise_std = pi / 60,
+        bias_rate_stds = (0.1, 0.1),
+        expected_stuck_time = 1e100,
+        expected_escape_time = 1e-100,
+        expected_kidnap_time = 1e100,
+        kidnap_range_x = [-5.0, 5.0],
+        kidnap_range_y = [-5.0, 5.0],
+    )
         noise = Exponential(1.0 / (1e-100 + noise_per_meter))
         stuck_noise = Exponential(expected_stuck_time)
         escape_noise = Exponential(expected_escape_time)
         kidnap_noise = Exponential(expected_kidnap_time)
-        
-        new([pose[1], pose[2], pose[3]],
+
+        new(
+            [pose[1], pose[2], pose[3]],
             agent,
             radius,
             color,
@@ -161,8 +165,8 @@ mutable struct RealRobot <: AbstractObject
             false,
             kidnap_noise, ## kidnap
             rand(kidnap_noise),
-            PoseUniform(kidnap_range_x, kidnap_range_y)
-            )
+            PoseUniform(kidnap_range_x, kidnap_range_y),
+        )
     end
 end
 
@@ -196,8 +200,16 @@ function apply_kidnap(robot::RealRobot, dt::Float64)
     end
 end
 
-function state_transition(robot::RealRobot, v_::Float64, ω_::Float64, dt::Float64;
-                          move_noise=false, vel_bias_noise=false, stuck_noise=false, kidnap=false)
+function state_transition(
+    robot::RealRobot,
+    v_::Float64,
+    ω_::Float64,
+    dt::Float64;
+    move_noise = false,
+    vel_bias_noise = false,
+    stuck_noise = false,
+    kidnap = false,
+)
     v = v_
     ω = ω_
 
@@ -210,16 +222,18 @@ function state_transition(robot::RealRobot, v_::Float64, ω_::Float64, dt::Float
     if stuck_noise
         v, ω = apply_stuck_error(robot, v, ω, dt)
     end
-    
+
     θ = robot.pose_[3]
     new_pose = [0.0, 0.0, 0.0]
     if abs(ω) < 1e-10
         dpose = [v * cos(θ), v * sin(θ), ω] * dt
         new_pose = robot.pose_ .+ dpose
     else
-        dpose = [v / ω * ( sin(θ+ω*dt) - sin(θ) ),
-                 v / ω * ( -cos(θ+ω*dt) + cos(θ) ),
-                 ω*dt]
+        dpose = [
+            v / ω * (sin(θ + ω * dt) - sin(θ)),
+            v / ω * (-cos(θ + ω * dt) + cos(θ)),
+            ω * dt,
+        ]
         new_pose = robot.pose_ .+ dpose
     end
 
@@ -231,36 +245,41 @@ function state_transition(robot::RealRobot, v_::Float64, ω_::Float64, dt::Float
             new_pose[3] += rand(robot.theta_noise_)
         end
     end
-    
+
     # save trajectory
     push!(robot.poses_, copy(robot.pose_))
 
     robot.pose_ = copy(new_pose)
-    
+
     ## kidnap
     if kidnap
         apply_kidnap(robot, dt)
-    end    
+    end
 end
 
-function draw(robot::RealRobot, p::Plot{T}) where T
+function draw(robot::RealRobot, p::Plot{T}) where {T}
     # robot
-    p = scatter!([robot.pose_[1]], [robot.pose_[2]],
-                 markersize=robot.radius_ * 100,
-                 color=robot.color_,
-                 markeralpha=0.5,
-                 legend=nothing,
-                 aspect_ratio=:equal)
+    p = scatter!(
+        [robot.pose_[1]],
+        [robot.pose_[2]],
+        markersize = robot.radius_ * 100,
+        color = robot.color_,
+        markeralpha = 0.5,
+        legend = nothing,
+        aspect_ratio = :equal,
+    )
     θ = robot.pose_[3]
     # pose
-    p = quiver!([robot.pose_[1]], [robot.pose_[2]],
-                quiver=([robot.radius_ * cos(θ) * 5],
-                        [robot.radius_ * sin(θ) * 5]),
-                color="black")
+    p = quiver!(
+        [robot.pose_[1]],
+        [robot.pose_[2]],
+        quiver = ([robot.radius_ * cos(θ) * 5], [robot.radius_ * sin(θ) * 5]),
+        color = "black",
+    )
     # traj
     x_his = [pose[1] for pose in robot.poses_]
     y_his = [pose[2] for pose in robot.poses_]
-    p = plot!(x_his, y_his, color="black", lw=0.5)
+    p = plot!(x_his, y_his, color = "black", lw = 0.5)
     # camera
     draw(robot.sensor_, robot.pose_, p)
     # agent
