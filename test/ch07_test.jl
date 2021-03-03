@@ -1,4 +1,4 @@
-ENV["GKSwstype"]="nul"
+ENV["GKSwstype"] = "nul"
 
 @testset "ch07_kdl_mcl" begin
     dt = 0.1
@@ -14,17 +14,16 @@ ENV["GKSwstype"]="nul"
     # robot side
     initial_pose = [0.0, 0.0, 0.0]
     estimator = KdlMcl(initial_pose, 1000)
-    circling_agent = EstimatorAgent(0.2, 10.0*pi/180, dt, estimator)
-    robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color="red")
+    circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
+    robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i in 1:10
+    anim = @animate for i = 1:10
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
-        z = observations(robot.sensor_, robot.pose_; noise=true, bias=true)
+        z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
         v, ω = decision(circling_agent, z, envmap)
-        state_transition(robot, v, ω, dt; move_noise=true, vel_bias_noise=true)
+        state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    gif(anim, "ch07_kdl_mcl.gif", fps=10)
+    gif(anim, "ch07_kdl_mcl.gif", fps = 10)
 end
-
