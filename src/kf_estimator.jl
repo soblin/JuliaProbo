@@ -10,17 +10,33 @@ mutable struct KalmanFilter <: AbstractEstimator
         initial_pose::Vector{Float64},
         motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
         distance_dev_rate = 0.14,
-        direction_dev = 0.05,
+        direction_dev = 0.05;
+        glob = false, # GlobalKf
+        xlim = [-5.0, 5.0],
+        ylim = [-5.0, 5.0],
     )
         @assert length(initial_pose) == 3
-        new(
-            MvNormal(initial_pose, Diagonal([1e-10, 1e-10, 1e-10])),
-            motion_noise_stds,
-            distance_dev_rate,
-            direction_dev,
-            copy(initial_pose),
-            envmap,
-        )
+        if glob
+            pose_distrib = PoseUniform(xlim, ylim)
+            rand_pose = uniform(pose_distrib)
+            new(
+                MvNormal(rand_pose, Diagonal([1e+4, 1e+4, 1e+4])),
+                motion_noise_stds,
+                distance_dev_rate,
+                direction_dev,
+                copy(initial_pose),
+                envmap,
+            )
+        else
+            new(
+                MvNormal(initial_pose, Diagonal([1e-10, 1e-10, 1e-10])),
+                motion_noise_stds,
+                distance_dev_rate,
+                direction_dev,
+                copy(initial_pose),
+                envmap,
+            )
+        end
     end
 end
 
