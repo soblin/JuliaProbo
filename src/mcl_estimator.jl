@@ -59,19 +59,34 @@ mutable struct Mcl <: AbstractEstimator
         num::Int64,
         motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
         distance_dev_rate = 0.14,
-        direction_dev = 0.05,
+        direction_dev = 0.05;
+        glob = false, # GlobalMcl
+        xlim = [-5.0, 5.0],
+        ylim = [-5.0, 5.0],
     )
         v = motion_noise_stds
         cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
-
-        new(
-            [Particle(initial_pose, 1.0 / num) for i = 1:num],
-            MvNormal([0.0, 0.0, 0.0, 0.0], cov),
-            distance_dev_rate,
-            direction_dev,
-            Particle(initial_pose, 0.0),
-            copy(initial_pose),
-        )
+        if glob
+            pose_distrib = PoseUniform(xlim, ylim)
+            initial_pose = uniform(pose_distrib)
+            new(
+                [Particle(uniform(pose_distrib), 1.0 / num) for i = 1:num],
+                MvNormal([0.0, 0.0, 0.0, 0.0], cov),
+                distance_dev_rate,
+                direction_dev,
+                Particle(initial_pose, 0.0),
+                copy(initial_pose),
+            )
+        else
+            new(
+                [Particle(initial_pose, 1.0 / num) for i = 1:num],
+                MvNormal([0.0, 0.0, 0.0, 0.0], cov),
+                distance_dev_rate,
+                direction_dev,
+                Particle(initial_pose, 0.0),
+                copy(initial_pose),
+            )
+        end
     end
 end
 
