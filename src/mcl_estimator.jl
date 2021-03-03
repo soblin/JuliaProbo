@@ -90,13 +90,42 @@ mutable struct Mcl <: AbstractEstimator
     end
 end
 
-function set_ml(mcl::Mcl)
+mutable struct ResetMcl <: AbstractEstimator
+    particles_::Vector{Particle}
+    motion_noise_rate_pdf::MvNormal{Float64}
+    distance_dev_rate::Float64
+    direction_dev::Float64
+    ml_::Particle
+    pose_::Vector{Float64}
+    αs_::Dict{Int64,Vector{Float64}}
+    function ResetMcl(
+        initial_pose::Vector{Float64},
+        num::Int64,
+        motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
+        distance_dev_rate = 0.14,
+        direction_dev = 0.05,
+    )
+        v = motion_noise_stds
+        cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
+        new(
+            [Particle(initial_pose, 1.0 / num) for i = 1:num],
+            MvNormal([0.0, 0.0, 0.0, 0.0], cov),
+            distance_dev_rate,
+            direction_dev,
+            Particle(initial_pose, 0.0),
+            copy(initial_pose),
+            Dict{Int64,Vector{Float64}}(),
+        )
+    end
+end
+
+function set_ml(mcl::Union{Mcl,ResetMcl})
     ind = findmax([p.weight_ for p in mcl.particles_])[2]
     mcl.ml_ = copy(mcl.particles_[ind])
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::Mcl, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::Union{Mcl,ResetMcl}, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i = 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
@@ -125,7 +154,36 @@ function observation_update(
     end
 end
 
-function resampling(mcl::Mcl)
+function observation_update(
+    mcl::ResetMcl,
+    observation::Vector{Vector{Float64}},
+    envmap::Map;
+    resample = true,
+)
+    N = length(mcl.particles_)
+    for i = 1:N
+        observation_update(
+            mcl.particles_[i],
+            observation,
+            envmap,
+            mcl.distance_dev_rate,
+            mcl.direction_dev,
+        )
+    end
+
+    α = sum([p.weight_ for p in mcl.particles_])
+    num_obsv = length(observation)
+    if !haskey(mcl.αs_, num_obsv)
+        mcl.αs_[num_obsv] = Vector{Float64}(undef, 0)
+    end
+    push!(mcl.αs_[num_obsv], α)
+    set_ml(mcl)
+    if resample
+        resampling(mcl)
+    end
+end
+
+function resampling(mcl::Union{Mcl,ResetMcl})
     ws = cumsum([p.weight_ for p in mcl.particles_])
 
     if ws[end] < 1e-100
@@ -152,7 +210,7 @@ function resampling(mcl::Mcl)
     end
 end
 
-function draw(mcl::Mcl, p::Plot{T}) where {T}
+function draw(mcl::Union{Mcl,ResetMcl}, p::Plot{T}) where {T}
     xs = [p.pose_[1] for p in mcl.particles_]
     ys = [p.pose_[2] for p in mcl.particles_]
     vxs =

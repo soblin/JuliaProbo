@@ -15,7 +15,7 @@ export Agent, EstimatorAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, observations, observation_function
 export Landmark, Map, World, push!, getindex
-export Particle, copy, Mcl, KalmanFilter, KdlMcl, motion_update
+export Particle, copy, Mcl, KalmanFilter, KdlMcl, ResetMcl, motion_update
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
