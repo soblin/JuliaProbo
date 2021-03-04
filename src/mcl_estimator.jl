@@ -98,12 +98,17 @@ mutable struct ResetMcl <: AbstractEstimator
     ml_::Particle
     pose_::Vector{Float64}
     αs_::Dict{Int64,Vector{Float64}}
+    α_threshold::Float64
+    reset_distrib::PoseUniform
     function ResetMcl(
         initial_pose::Vector{Float64},
         num::Int64,
         motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
         distance_dev_rate = 0.14,
-        direction_dev = 0.05,
+        direction_dev = 0.05;
+        α_threshold = 0.001,
+        xlim = [-5.0, 5.0],
+        ylim = [-5.0, 5.0],
     )
         v = motion_noise_stds
         cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
@@ -115,6 +120,8 @@ mutable struct ResetMcl <: AbstractEstimator
             Particle(initial_pose, 0.0),
             copy(initial_pose),
             Dict{Int64,Vector{Float64}}(),
+            α_threshold,
+            PoseUniform(xlim, ylim),
         )
     end
 end
@@ -171,14 +178,11 @@ function observation_update(
         )
     end
 
-    α = sum([p.weight_ for p in mcl.particles_])
-    num_obsv = length(observation)
-    if !haskey(mcl.αs_, num_obsv)
-        mcl.αs_[num_obsv] = Vector{Float64}(undef, 0)
-    end
-    push!(mcl.αs_[num_obsv], α)
     set_ml(mcl)
-    if resample
+    α = sum([p.weight_ for p in mcl.particles_])
+    if α < mcl.α_threshold
+        random_reset(mcl)
+    else
         resampling(mcl)
     end
 end
@@ -221,6 +225,14 @@ function draw(mcl::Union{Mcl,ResetMcl}, p::Plot{T}) where {T}
     pose = mcl.pose_
     annota = "($(round(pose[1], sigdigits=3)), $(round(pose[2], sigdigits=3)), $(round(pose[3], sigdigits=3)))"
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
+end
+
+function random_reset(mcl::ResetMcl)
+    N = length(mcl.particles_)
+    for i = 1:N
+        mcl.particles_[i].pose_ = uniform(mcl.reset_distrib)
+        mcl.particles_[i].weight_ = 1.0 / N
+    end
 end
 
 mutable struct KdlMcl <: AbstractEstimator
