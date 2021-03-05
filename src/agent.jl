@@ -58,6 +58,8 @@ function decision(
             resample = resample,
             sensor_reset = sensor_reset,
         )
+    elseif typeof(agent.estimator_) == AMcl
+        observation_update(agent.estimator_, observation, envmap)
     elseif typeof(agent.estimator_) == KalmanFilter
         observation_update(agent.estimator_, observation)
     end

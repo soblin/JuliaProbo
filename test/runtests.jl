@@ -5,7 +5,8 @@ using JuliaFormatter
 
 ENV["GKSwstype"] = "nul"
 
-format("../")
+format("../src")
+format("../test")
 
 include("ch03_test.jl")
 include("ch04_test.jl")

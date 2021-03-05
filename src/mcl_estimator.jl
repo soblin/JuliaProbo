@@ -128,13 +128,51 @@ mutable struct ResetMcl <: AbstractMcl
     end
 end
 
+mutable struct AMcl <: AbstractMcl
+    particles_::Vector{Particle}
+    motion_noise_rate_pdf::MvNormal{Float64}
+    distance_dev_rate::Float64
+    direction_dev::Float64
+    ml_::Particle
+    pose_::Vector{Float64}
+    reset_distrib::PoseUniform
+    amcl_params::Dict{String,Float64}
+    fast_α_term::Float64
+    slow_α_term::Float64
+    function AMcl(
+        initial_pose::Vector{Float64},
+        num::Int64,
+        motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
+        distance_dev_rate = 0.14,
+        direction_dev = 0.05;
+        xlim = [-5.0, 5.0],
+        ylim = [-5.0, 5.0],
+        amcl_params = Dict("slow" => 0.001, "fast" => 0.1, "v" => 3.0),
+    )
+        v = motion_noise_stds
+        cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
+        new(
+            [Particle(initial_pose, 1.0 / num) for i = 1:num],
+            MvNormal([0.0, 0.0, 0.0, 0.0], cov),
+            distance_dev_rate,
+            direction_dev,
+            Particle(initial_pose, 0.0),
+            copy(initial_pose),
+            PoseUniform(xlim, ylim),
+            amcl_params,
+            1.0,
+            1.0,
+        )
+    end
+end
+
 function set_ml(mcl::AbstractMcl)
     ind = findmax([p.weight_ for p in mcl.particles_])[2]
     mcl.ml_ = copy(mcl.particles_[ind])
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::Union{Mcl,ResetMcl}, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::AbstractMcl, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i = 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
@@ -194,6 +232,21 @@ function observation_update(
     end
 end
 
+function observation_update(mcl::AMcl, observation::Vector{Vector{Float64}}, envmap::Map)
+    N = length(mcl.particles_)
+    for i = 1:N
+        observation_update(
+            mcl.particles_[i],
+            observation,
+            envmap,
+            mcl.distance_dev_rate,
+            mcl.direction_dev,
+        )
+    end
+    set_ml(mcl)
+    adaptive_resetting(mcl, observation, envmap)
+end
+
 function resampling(mcl::AbstractMcl)
     ws = cumsum([p.weight_ for p in mcl.particles_])
 
@@ -234,7 +287,7 @@ function draw(mcl::AbstractMcl, p::Plot{T}) where {T}
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
 end
 
-function random_reset(mcl::ResetMcl)
+function random_reset(mcl::AbstractMcl)
     N = length(mcl.particles_)
     for i = 1:N
         mcl.particles_[i].pose_ = uniform(mcl.reset_distrib)
@@ -258,12 +311,13 @@ function sensor_resetting(mcl::ResetMcl, observation::Vector{Vector{Float64}}, e
 end
 
 function sensor_resetting_draw(
-    mcl::ResetMcl,
+    mcl::AbstractMcl,
     p::Particle,
     landmark_pos::Vector{Float64},
     d_obs::Float64,
     ϕ_obs::Float64,
 )
+    @assert typeof(mcl) == ResetMcl || typeof(mcl) == AMcl
     ψ = (rand() - 0.5) * (2 * pi) # ∈ [-π, π]
     d = rand(Normal(d_obs, (mcl.distance_dev_rate * d_obs)^2))
     p.pose_[1] = landmark_pos[1] + d * cos(ψ)
@@ -272,6 +326,32 @@ function sensor_resetting_draw(
     ϕ = rand(Normal(ϕ_obs, mcl.direction_dev^2))
     p.pose_[3] = atan(landmark_pos[2] - p.pose_[2], landmark_pos[1] - p.pose_[1]) - ϕ
     p.weight_ = 1.0 / length(mcl.particles_)
+end
+
+function adaptive_resetting(mcl::AMcl, observation::Vector{Vector{Float64}}, envmap::Map)
+    if length(observation) == 0
+        return
+    end
+
+    amcl_params = mcl.amcl_params
+    α = sum([p.weight_ for p in mcl.particles_])
+    mcl.slow_α_term += amcl_params["slow"] * (α - mcl.slow_α_term)
+    mcl.fast_α_term += amcl_params["fast"] * (α - mcl.fast_α_term)
+    sl_num = 1.0 - amcl_params["v"] * mcl.fast_α_term / mcl.slow_α_term
+    sl_num = length(mcl.particles_) * maximum([0.0, sl_num])
+
+    resampling(mcl)
+    nearest_obs = findmin([obsv[1] for obsv in observation])
+    ind = nearest_obs[2]
+    obs_d, obs_ψ = observation[ind][1], observation[ind][2]
+    landmark_id = convert(Int64, observation[ind][3] + 1)
+
+    N = length(mcl.particles_)
+    for n = 1:convert(Int64, floor(sl_num))
+        ind = rand(1:N)
+        p = mcl.particles_[ind]
+        sensor_resetting_draw(mcl, p, envmap[landmark_id].pos, obs_d, obs_ψ)
+    end
 end
 
 mutable struct KdlMcl <: AbstractEstimator
