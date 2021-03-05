@@ -15,7 +15,7 @@
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:10
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -26,7 +26,7 @@
     #gif(anim, "ch07_kdl_mcl.gif", fps=10)
 end
 
-@testset "ch07_kdl_mcl" begin
+@testset "ch07_mcl_global" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
@@ -44,7 +44,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -74,7 +74,7 @@ end
     robot = RealRobot(initial_pose, agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
 
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -110,7 +110,7 @@ end
     )
     push!(world, robot)
 
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -153,7 +153,7 @@ end
         expected_kidnap_time = 20,
     )
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -191,7 +191,7 @@ end
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
 
     push!(world, robot)
-    for i = 1:5
+    for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -274,7 +274,7 @@ end
         expected_kidnap_time = 30,
     )
     push!(world, robot)
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -320,7 +320,7 @@ end
         color = "red",
     )
     push!(world, robot)
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:100
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
