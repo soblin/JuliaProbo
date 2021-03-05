@@ -171,3 +171,176 @@ end
     end
     #gif(anim, "images/ch07_mcl_kidnap.gif", fps=10)
 end
+
+@testset "ch07_reset_mcl" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks =
+        [Landmark([2.0, -3.0], 0), Landmark([3.0, 3.0], 1), Landmark([-4.0, 2.0], 2)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = World(xlim, ylim)
+    push!(world, envmap)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    estimator = ResetMcl(initial_pose, 100)
+    circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
+    robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
+
+    push!(world, robot)
+    for i = 1:5
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        v, ω = decision(circling_agent, z, envmap)
+        state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
+    end
+    return estimator
+end
+
+@testset "ch07_sensor_reset" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks = [
+        Landmark([2.0, -3.0], 0),
+        Landmark([3.0, 3.0], 1),
+        Landmark([-4.0, 2.0], 2),
+        Landmark([0.0, 0.0], 3),
+        Landmark([-4.0, -4.0], 4),
+    ]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = World(xlim, ylim)
+    push!(world, envmap)
+    # robot side
+    initial_pose = uniform(PoseUniform(xlim, ylim))
+    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.005)
+    circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
+    robot = RealRobot(
+        initial_pose,
+        circling_agent,
+        RealCamera(landmarks);
+        color = "red",
+        expected_kidnap_time = 10,
+    )
+    push!(world, robot)
+    anim = @animate for i = 1:100
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        v, ω = decision(circling_agent, z, envmap; sensor_reset = true)
+        state_transition(
+            robot,
+            v,
+            ω,
+            dt;
+            move_noise = true,
+            vel_bias_noise = true,
+            kidnap = true,
+        )
+    end
+    #gif(anim, "images/ch07_sensor_reset2.gif", fps=10)
+end
+
+@testset "ch07_reset_mcl2" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks =
+        [Landmark([2.0, -3.0], 0), Landmark([3.0, 3.0], 1), Landmark([-4.0, 2.0], 2)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = World(xlim, ylim)
+    push!(world, envmap)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.005)
+    circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
+    robot = RealRobot(
+        initial_pose,
+        circling_agent,
+        RealCamera(landmarks);
+        color = "red",
+        expected_kidnap_time = 30,
+    )
+    push!(world, robot)
+    anim = @animate for i = 1:50
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        v, ω = decision(circling_agent, z, envmap)
+        state_transition(
+            robot,
+            v,
+            ω,
+            dt;
+            move_noise = true,
+            vel_bias_noise = true,
+            kidnap = true,
+        )
+    end
+    #gif(anim, "images/ch07_reset_mcl2.gif", fps=10)
+end
+
+@testset "ch07_adaptive_mcl" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks = [Landmark([2.0, -3.0], 0), Landmark([3.0, 3.0], 1)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = World(xlim, ylim)
+    push!(world, envmap)
+    # robot side
+    initial_pose = [0.0, 0.0, 0.0]
+    estimator = AMcl(initial_pose, 100; xlim = xlim, ylim = ylim)
+    circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
+    robot = RealRobot(
+        initial_pose,
+        circling_agent,
+        RealCamera(
+            landmarks,
+            phantom_prob = 0.1,
+            phantom_range_x = xlim,
+            phantom_range_y = ylim,
+        );
+        color = "red",
+    )
+    push!(world, robot)
+    anim = @animate for i = 1:50
+        t = dt * i
+        annota = "t = $(round(t, sigdigits=3))[s]"
+        p = draw(world, annota)
+        z = observations(
+            robot.sensor_,
+            robot.pose_;
+            noise = true,
+            bias = true,
+            phantom = true,
+        )
+        v, ω = decision(circling_agent, z, envmap)
+        state_transition(
+            robot,
+            v,
+            ω,
+            dt;
+            move_noise = true,
+            vel_bias_noise = true,
+            kidnap = false,
+        )
+    end
+    #gif(anim, "ch07_adaptive_mcl.gif", fps=10)
+end
