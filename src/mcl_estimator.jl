@@ -47,7 +47,9 @@ function observation_update(
     end
 end
 
-mutable struct Mcl <: AbstractEstimator
+abstract type AbstractMcl <: AbstractEstimator end
+
+mutable struct Mcl <: AbstractMcl
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -90,7 +92,7 @@ mutable struct Mcl <: AbstractEstimator
     end
 end
 
-mutable struct ResetMcl <: AbstractEstimator
+mutable struct ResetMcl <: AbstractMcl
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -126,7 +128,7 @@ mutable struct ResetMcl <: AbstractEstimator
     end
 end
 
-function set_ml(mcl::Union{Mcl,ResetMcl})
+function set_ml(mcl::AbstractMcl)
     ind = findmax([p.weight_ for p in mcl.particles_])[2]
     mcl.ml_ = copy(mcl.particles_[ind])
     mcl.pose_ = copy(mcl.ml_.pose_)
@@ -192,7 +194,7 @@ function observation_update(
     end
 end
 
-function resampling(mcl::Union{Mcl,ResetMcl})
+function resampling(mcl::AbstractMcl)
     ws = cumsum([p.weight_ for p in mcl.particles_])
 
     if ws[end] < 1e-100
@@ -219,7 +221,7 @@ function resampling(mcl::Union{Mcl,ResetMcl})
     end
 end
 
-function draw(mcl::Union{Mcl,ResetMcl}, p::Plot{T}) where {T}
+function draw(mcl::AbstractMcl, p::Plot{T}) where {T}
     xs = [p.pose_[1] for p in mcl.particles_]
     ys = [p.pose_[2] for p in mcl.particles_]
     vxs =
@@ -314,8 +316,8 @@ mutable struct KdlMcl <: AbstractEstimator
 end
 
 function set_ml(mcl::KdlMcl)
-    i = findmax([p.weight_ for p in mcl.particles_])[2]
-    mcl.ml_ = copy(mcl.particles_[i])
+    ind = findmax([p.weight_ for p in mcl.particles_])[2]
+    mcl.ml_ = copy(mcl.particles_[ind])
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
