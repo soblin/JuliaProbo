@@ -166,6 +166,7 @@ function observation_update(
     observation::Vector{Vector{Float64}},
     envmap::Map;
     resample = true,
+    sensor_reset = true,
 )
     N = length(mcl.particles_)
     for i = 1:N
@@ -181,9 +182,13 @@ function observation_update(
     set_ml(mcl)
     α = sum([p.weight_ for p in mcl.particles_])
     if α < mcl.α_threshold
-        random_reset(mcl)
+        if sensor_reset
+            sensor_resetting(mcl, observation, envmap)
+        end
     else
-        resampling(mcl)
+        if resample
+            resampling(mcl)
+        end
     end
 end
 
@@ -233,6 +238,38 @@ function random_reset(mcl::ResetMcl)
         mcl.particles_[i].pose_ = uniform(mcl.reset_distrib)
         mcl.particles_[i].weight_ = 1.0 / N
     end
+end
+
+function sensor_resetting(mcl::ResetMcl, observation::Vector{Vector{Float64}}, envmap::Map)
+    d_obs = findmin([obsv[1] for obsv in observation])
+    nearest_ind = d_obs[2]
+    d_obs = d_obs[1]
+    values = observation[nearest_ind][1:2]
+    landmark_id = convert(Int64, observation[nearest_ind][3] + 1)
+    @assert values[1] == d_obs
+    ψ_obs = values[2]
+
+    N = length(mcl.particles_)
+    for i = 1:N
+        sensor_resetting_draw(mcl, mcl.particles_[i], envmap[landmark_id].pos, d_obs, ψ_obs)
+    end
+end
+
+function sensor_resetting_draw(
+    mcl::ResetMcl,
+    p::Particle,
+    landmark_pos::Vector{Float64},
+    d_obs::Float64,
+    ϕ_obs::Float64,
+)
+    ψ = (rand() - 0.5) * (2 * pi) # ∈ [-π, π]
+    d = rand(Normal(d_obs, (mcl.distance_dev_rate * d_obs)^2))
+    p.pose_[1] = landmark_pos[1] + d * cos(ψ)
+    p.pose_[2] = landmark_pos[2] + d * sin(ψ)
+
+    ϕ = rand(Normal(ϕ_obs, mcl.direction_dev^2))
+    p.pose_[3] = atan(landmark_pos[2] - p.pose_[2], landmark_pos[1] - p.pose_[1]) - ϕ
+    p.weight_ = 1.0 / length(mcl.particles_)
 end
 
 mutable struct KdlMcl <: AbstractEstimator
