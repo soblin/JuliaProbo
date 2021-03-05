@@ -15,7 +15,7 @@
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -44,7 +44,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -74,7 +74,7 @@ end
     robot = RealRobot(initial_pose, agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
 
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -110,7 +110,7 @@ end
     )
     push!(world, robot)
 
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -153,7 +153,7 @@ end
         expected_kidnap_time = 20,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -191,7 +191,7 @@ end
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
 
     push!(world, robot)
-    for i = 1:100
+    for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -221,7 +221,7 @@ end
     push!(world, envmap)
     # robot side
     initial_pose = uniform(PoseUniform(xlim, ylim))
-    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.005)
+    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.01)
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(
         initial_pose,
@@ -231,7 +231,7 @@ end
         expected_kidnap_time = 10,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -264,7 +264,7 @@ end
     push!(world, envmap)
     # robot side
     initial_pose = [0.0, 0.0, 0.0]
-    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.005)
+    estimator = ResetMcl(initial_pose, 100; xlim = xlim, ylim = ylim, α_threshold = 0.01)
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(
         initial_pose,
@@ -274,7 +274,7 @@ end
         expected_kidnap_time = 30,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -320,7 +320,7 @@ end
         color = "red",
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)

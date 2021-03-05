@@ -287,6 +287,7 @@ function draw(mcl::AbstractMcl, p::Plot{T}) where {T}
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
 end
 
+#=
 function random_reset(mcl::AbstractMcl)
     N = length(mcl.particles_)
     for i = 1:N
@@ -294,6 +295,7 @@ function random_reset(mcl::AbstractMcl)
         mcl.particles_[i].weight_ = 1.0 / N
     end
 end
+=#
 
 function sensor_resetting(mcl::ResetMcl, observation::Vector{Vector{Float64}}, envmap::Map)
     d_obs = findmin([obsv[1] for obsv in observation])
