@@ -9,7 +9,7 @@
     push!(m, landmarks[1])
     push!(m, landmarks[2])
     push!(m, landmarks[3])
-    
+
     robot1 = IdealRobot([2.0, 3.0, pi / 6], straight_agent, camera1, 0.05, "blue")
     robot2 = IdealRobot([-2.0, -1.0, pi / 5 * 6], circling_agent, camera2, 0.05, "orange")
     xlim = [-5.5, 10]
@@ -32,7 +32,7 @@
         state_transition(robot2, v, ω, dt)
     end
     #gif(anim, "ch3_robot11.gif", fps=10);
-    
+
 end
 
 @testset "ch03_robot11" begin
