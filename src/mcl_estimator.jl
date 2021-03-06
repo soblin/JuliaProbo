@@ -356,7 +356,7 @@ function adaptive_resetting(mcl::AMcl, observation::Vector{Vector{Float64}}, env
     end
 end
 
-mutable struct KdlMcl <: AbstractEstimator
+mutable struct KldMcl <: AbstractEstimator
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -368,7 +368,7 @@ mutable struct KdlMcl <: AbstractEstimator
     δ::Float64
     maxnum::Int64
     binnum_::Int64
-    function KdlMcl(
+    function KldMcl(
         initial_pose::Vector{Float64},
         maxnum::Int64,
         motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
@@ -397,13 +397,13 @@ mutable struct KdlMcl <: AbstractEstimator
     end
 end
 
-function set_ml(mcl::KdlMcl)
+function set_ml(mcl::KldMcl)
     ind = findmax([p.weight_ for p in mcl.particles_])[2]
     mcl.ml_ = copy(mcl.particles_[ind])
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::KdlMcl, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::KldMcl, v::Float64, ω::Float64, dt::Float64)
     ws = [p.weight_ for p in mcl.particles_]
 
     if sum(ws) < 1e-100
@@ -435,7 +435,7 @@ function motion_update(mcl::KdlMcl, v::Float64, ω::Float64, dt::Float64)
 end
 
 function observation_update(
-    mcl::KdlMcl,
+    mcl::KldMcl,
     observation::Vector{Vector{Float64}},
     envmap::Map;
     resample = false,
@@ -453,7 +453,7 @@ function observation_update(
     set_ml(mcl)
 end
 
-function draw(mcl::KdlMcl, p::Plot{T}) where {T}
+function draw(mcl::KldMcl, p::Plot{T}) where {T}
     xs = [p.pose_[1] for p in mcl.particles_]
     ys = [p.pose_[2] for p in mcl.particles_]
     vxs =
