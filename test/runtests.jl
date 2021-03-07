@@ -4,6 +4,7 @@ using Test
 using JuliaFormatter
 
 ENV["GKSwstype"] = "nul"
+GUI = false
 
 format("../src")
 format("../test")

@@ -14,7 +14,7 @@
     end
 
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -26,7 +26,9 @@
             state_transition(robots[j], v, ω, dt; move_noise = true)
         end
     end
-    #gif(anim, "ch04_sim02.gif", fps=10);
+    if GUI
+        gif(anim, "ch04_sim02.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim03" begin
@@ -46,7 +48,7 @@ end
     )
     push!(world, biased_robot)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
         p = draw(world, annota)
         obsv1 = observations(nobias_robot.sensor_, nobias_robot.pose_)
@@ -56,7 +58,9 @@ end
         state_transition(nobias_robot, v1, ω1, dt)
         state_transition(biased_robot, v2, ω2, dt; vel_bias_noise = true)
     end
-    #gif(anim, "ch04_sim03.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim03.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim04" begin
@@ -83,7 +87,7 @@ end
     push!(world, ideal_robot)
 
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
         p = draw(world, annota)
         for j = 1:10
@@ -95,7 +99,9 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    #gif(anim, "ch04_sim04.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim04.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim05" begin
@@ -121,7 +127,7 @@ end
     push!(world, ideal_robot)
 
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
         p = draw(world, annota)
         for j = 1:10
@@ -133,7 +139,9 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(ideal_robot, v, ω, dt)
     end
-    #gif(anim, "ch04_sim05.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim05.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim07" begin
@@ -150,7 +158,7 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -159,7 +167,9 @@ end
         v, ω = decision(circling_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    #gif(anim, "ch04_sim07.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim07.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim08" begin
@@ -181,7 +191,7 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -190,7 +200,9 @@ end
         v, ω = decision(straight_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
-    #gif(anim, "ch04_sim08.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim08.gif", fps = 20)
+    end
 end
 
 @testset "ch04_sim09" begin
@@ -211,7 +223,7 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -224,6 +236,9 @@ end
         )
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
+    end
+    if GUI
+        gif(anim, "ch04_sim09.gif", fps = 20)
     end
 end
 
@@ -245,7 +260,7 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -258,6 +273,9 @@ end
         )
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
+    end
+    if GUI
+        gif(anim, "ch04_sim10.gif", fps = 20)
     end
 end
 
@@ -279,7 +297,7 @@ end
     push!(world, robot)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -293,5 +311,7 @@ end
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch04_sim11.gif", fps=10)
+    if GUI
+        gif(anim, "ch04_sim11.gif", fps = 20)
+    end
 end

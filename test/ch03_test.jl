@@ -19,7 +19,7 @@
     push!(world, robot2)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         obsv1 = observations(camera1, robot1.pose_)
@@ -31,8 +31,9 @@
         v, ω = decision(circling_agent, obsv2)
         state_transition(robot2, v, ω, dt)
     end
-    #gif(anim, "ch3_robot11.gif", fps=10);
-
+    if GUI
+        gif(anim, "ch3_robot11.gif", fps = 20)
+    end
 end
 
 @testset "ch03_robot11" begin
@@ -53,7 +54,7 @@ end
     push!(world, robot2)
     push!(world, m)
     dt = 0.1
-    anim = @animate for i = 1:50
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         obsv1 = observations(camera1, robot1.pose_)
@@ -65,5 +66,7 @@ end
         v, ω = decision(circling_agent, obsv2)
         state_transition(robot2, v, ω, dt)
     end
-    #gif(anim, "ch3_robot11.gif", fps=10);
+    if GUI
+        gif(anim, "ch3_robot11.gif", fps = 20)
+    end
 end

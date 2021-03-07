@@ -27,7 +27,7 @@
     robot3 = RealRobot(initial_pose, agent3, RealCamera(landmarks); color = "red")
     push!(world, robot3)
 
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -44,7 +44,9 @@
         v3, ω3 = decision(agent3, z3, envmap)
         state_transition(robot3, v3, ω3, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch06_kf3.gif", fps=10)
+    if GUI
+        gif(anim, "ch06_kf3.gif", fps = 20)
+    end
 end
 
 @testset "ch06_kf4" begin
@@ -81,7 +83,7 @@ end
         push!(world, robots[i])
     end
 
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -91,5 +93,7 @@ end
             state_transition(robots[i], v, ω, dt; move_noise = true, vel_bias_noise = true)
         end
     end
-    #gif(anim, "ch06_kf4.gif", fps=10)
+    if GUI
+        gif(anim, "ch06_kf4.gif", fps = 20)
+    end
 end

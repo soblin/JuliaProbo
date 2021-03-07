@@ -15,7 +15,7 @@
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -23,7 +23,9 @@
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch07_kld_mcl.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_kld_mcl.gif", fps = 20)
+    end
 end
 
 @testset "ch07_mcl_global" begin
@@ -44,7 +46,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -52,7 +54,9 @@ end
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    # gif(anim, "images/ch07_mcl_global.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_mcl_global.gif", fps = 20)
+    end
 end
 
 @testset "ch07_kf_global" begin
@@ -74,7 +78,7 @@ end
     robot = RealRobot(initial_pose, agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
 
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -82,7 +86,9 @@ end
         v, ω = decision(agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "images/ch07_kf_global.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_kf_global.gif", fps = 20)
+    end
 end
 
 @testset "ch07_kf_kidnap" begin
@@ -110,7 +116,7 @@ end
     )
     push!(world, robot)
 
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -126,7 +132,9 @@ end
             kidnap = true,
         )
     end
-    #gif(anim, "images/ch07_kf_global.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_kf_global.gif", fps = 20)
+    end
 end
 
 @testset "ch07_mcl_kidnap" begin
@@ -153,7 +161,7 @@ end
         expected_kidnap_time = 20,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -169,7 +177,9 @@ end
             kidnap = true,
         )
     end
-    #gif(anim, "images/ch07_mcl_kidnap.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_mcl_kidnap.gif", fps = 20)
+    end
 end
 
 @testset "ch07_reset_mcl" begin
@@ -191,7 +201,7 @@ end
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
 
     push!(world, robot)
-    for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -199,7 +209,9 @@ end
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    return estimator
+    if GUI
+        gif(anim, "ch07_reset_mcl.gif", fps = 20)
+    end
 end
 
 @testset "ch07_sensor_reset" begin
@@ -231,7 +243,7 @@ end
         expected_kidnap_time = 10,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -247,7 +259,9 @@ end
             kidnap = true,
         )
     end
-    #gif(anim, "images/ch07_sensor_reset2.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_sensor_reset2.gif", fps = 20)
+    end
 end
 
 @testset "ch07_reset_mcl2" begin
@@ -274,7 +288,7 @@ end
         expected_kidnap_time = 30,
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -290,7 +304,9 @@ end
             kidnap = true,
         )
     end
-    #gif(anim, "images/ch07_reset_mcl2.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_reset_mcl2.gif", fps = 20)
+    end
 end
 
 @testset "ch07_adaptive_mcl" begin
@@ -320,7 +336,7 @@ end
         color = "red",
     )
     push!(world, robot)
-    anim = @animate for i = 1:100
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -342,5 +358,7 @@ end
             kidnap = false,
         )
     end
-    #gif(anim, "ch07_adaptive_mcl.gif", fps=10)
+    if GUI
+        gif(anim, "ch07_adaptive_mcl.gif", fps = 20)
+    end
 end
