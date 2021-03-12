@@ -111,8 +111,8 @@ function observation_update(kf::KalmanFilter, observation::Vector{Vector{Float64
         z = obsv[1:2]
         obs_index = convert(Int64, obsv[3]) + 1 # landmark id starts from 0!
 
-        H = matH(μ, envmap[obs_index].pos)
-        estimated_z = observation_function(μ, envmap[obs_index].pos)
+        H = matH(μ, envmap[obs_index].pos_)
+        estimated_z = observation_function(μ, envmap[obs_index].pos_)
         Q = matQ(estimated_z[1] * kf.distance_dev_rate, kf.direction_dev)
         K = Σ * transpose(H) * inv(Q + H * Σ * transpose(H))
         μ += K * (z - estimated_z)

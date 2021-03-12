@@ -14,8 +14,9 @@ export PoseUniform, uniform
 export Agent, EstimatorAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, observations, observation_function
-export Landmark, Map, World, push!, getindex
+export Landmark, EstimatedLandmark, Map, World, push!, getindex
 export Particle, copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update
+export MapParticle, FastSlam
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
@@ -26,5 +27,6 @@ include("robot.jl")
 include("sensor.jl")
 include("mcl_estimator.jl")
 include("kf_estimator.jl")
+include("fastslam.jl")
 
 end # module

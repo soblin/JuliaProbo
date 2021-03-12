@@ -1,5 +1,5 @@
-struct Landmark <: AbstractObject
-    pos::Vector{Float64}
+struct Landmark <: AbstractLandmark
+    pos_::Vector{Float64}
     id::Int64
     function Landmark(pos::Vector{Float64}, id::Int64)
         new(pos, id)
@@ -8,27 +8,52 @@ end
 
 function draw(mark::Landmark, p::Plot{T}) where {T}
     p = scatter!(
-        [mark.pos[1]],
-        [mark.pos[2]],
+        [mark.pos_[1]],
+        [mark.pos_[2]],
         markershape = :star,
         markersize = 10,
         color = "orange",
     )
-    p = annotate!(mark.pos[1] + 0.5, mark.pos[2] + 0.5, text("id: $(mark.id)", 10))
+    p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10))
 end
 
-mutable struct Map <: AbstractObject
-    landmarks_::Vector{Landmark}
-    function Map()
-        new(Vector{Landmark}[])
+mutable struct EstimatedLandmark <: AbstractLandmark
+    pos_::Vector{Float64}
+    id::Int64
+    cov_::Union{Matrix{Float64},Nothing}
+    function EstimatedLandmark(id::Int64)
+        new([0.0, 0.0], id, nothing)
     end
 end
 
-function Base.push!(map::Map, landmark::Landmark)
+function draw(mark::EstimatedLandmark, p::Plot{T}) where {T}
+    if mark.cov_ == nothing
+        return
+    else
+        p = scatter!(
+            [mark.pos_[1]],
+            [mark.pos_[2]],
+            markershape = :star,
+            markersize = 10,
+            color = "orange",
+        )
+        p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10))
+        p = covellipse!(mark.pos_, mark.cov_[1:2, 1:2], n_std = 3, aspect_ratio = 1)
+    end
+end
+
+mutable struct Map <: AbstractObject
+    landmarks_::Vector{AbstractLandmark}
+    function Map()
+        new(Vector{AbstractLandmark}[])
+    end
+end
+
+function Base.push!(map::Map, landmark::AbstractLandmark)
     push!(map.landmarks_, landmark)
 end
 
-function Base.push!(map::Map, landmarks::Vector{Landmark})
+function Base.push!(map::Map, landmarks::Vector{T}) where {T<:AbstractLandmark}
     for landmark in landmarks
         push!(map.landmarks_, landmark)
     end

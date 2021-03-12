@@ -1,4 +1,4 @@
-mutable struct Particle
+mutable struct Particle <: AbstractParticle
     pose_::Vector{Float64}
     weight_::Float64
     function Particle(pose::Vector{Float64}, weight::Float64)
@@ -13,7 +13,7 @@ function Base.copy(p::Particle)
 end
 
 function motion_update(
-    p::Particle,
+    p::AbstractParticle,
     v::Float64,
     ω::Float64,
     dt::Float64,
@@ -38,7 +38,7 @@ function observation_update(
         obs_pos = obsv[1:2]
         obs_id = convert(Int64, obsv[3])
 
-        pos_on_map = envmap.landmarks_[obs_id+1].pos
+        pos_on_map = envmap.landmarks_[obs_id+1].pos_
         particle_suggest_pos = observation_function(p.pose_, pos_on_map)
 
         distance_dev = distance_dev_rate * particle_suggest_pos[1]
@@ -46,9 +46,6 @@ function observation_update(
         p.weight_ *= pdf(MvNormal(particle_suggest_pos, cov), obs_pos)
     end
 end
-
-abstract type AbstractMcl <: AbstractEstimator end
-abstract type AbstractResetMcl <: AbstractMcl end
 
 mutable struct Mcl <: AbstractMcl
     particles_::Vector{Particle}
@@ -303,7 +300,13 @@ function sensor_resetting(
 
     N = length(mcl.particles_)
     for i = 1:N
-        sensor_resetting_draw(mcl, mcl.particles_[i], envmap[landmark_id].pos, d_obs, ψ_obs)
+        sensor_resetting_draw(
+            mcl,
+            mcl.particles_[i],
+            envmap[landmark_id].pos_,
+            d_obs,
+            ψ_obs,
+        )
     end
 end
 
@@ -346,7 +349,7 @@ function adaptive_resetting(mcl::AMcl, observation::Vector{Vector{Float64}}, env
     for n = 1:convert(Int64, floor(sl_num))
         ind = rand(1:N)
         p = mcl.particles_[ind]
-        sensor_resetting_draw(mcl, p, envmap[landmark_id].pos, obs_d, obs_ψ)
+        sensor_resetting_draw(mcl, p, envmap[landmark_id].pos_, obs_d, obs_ψ)
     end
 end
 
