@@ -11,6 +11,12 @@ mutable struct MapParticle <: AbstractParticle
     end
 end
 
+function Base.copy(p::MapParticle)
+    p_ = MapParticle(copy(p.pose_), p.weight_, 0)
+    p_.map_ = copy(p.map_)
+    return p_
+end
+
 mutable struct FastSlam <: AbstractMcl
     particles_::Vector{MapParticle}
     motion_noise_rate_pdf::MvNormal{Float64}
@@ -29,12 +35,15 @@ mutable struct FastSlam <: AbstractMcl
         v = motion_noise_stds
         cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
         new(
-            [MapParticle(init_pose, 1.0 / particle_num, landmark_num) for i in 1:particle_num],
+            [
+                MapParticle(init_pose, 1.0 / particle_num, landmark_num) for
+                i = 1:particle_num
+            ],
             MvNormal([0.0, 0.0, 0.0, 0.0], cov),
             distance_dev_rate,
             direction_dev,
-            MapParticle(initial_pose, 1.0, 0.0),
-            initial_pose
+            MapParticle(init_pose, 1.0, 0),
+            init_pose,
         )
     end
 end
@@ -45,6 +54,7 @@ function observation_update(
     envmap::Map;
     resample = true,
 )
+    # currently same as the one for mcl::Mcl
     N = length(mcl.particles_)
     for i = 1:N
         observation_update(

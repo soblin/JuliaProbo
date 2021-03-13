@@ -1,6 +1,10 @@
 module JuliaProbo
 
-import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
+using Reexport
+import RecipesBase: @recipe
+@reexport using Plots
+import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text, @userplot, @series
+import LinearAlgebra: eigen, diagm
 import Random: rand
 import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov
 import LinearAlgebra: Diagonal, I
