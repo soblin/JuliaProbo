@@ -1,3 +1,37 @@
+mutable struct EstimatedLandmark <: AbstractLandmark
+    pos_::Vector{Float64}
+    id::Int64
+    cov_::Union{Matrix{Float64},Nothing}
+    function EstimatedLandmark(id::Int64)
+        # this cov_ initial value is for debugging
+        new([0.0, 0.0], id, nothing)
+    end
+end
+
+function Base.copy(lm::EstimatedLandmark)
+    if lm.cov_ == nothing
+        return EstimatedLandmark(copy(lm.pos_), lm.id, nothing)
+    else
+        return EstimatedLandmark(copy(lm.pos_), lm.id, copy(lm.cov_))
+    end
+end
+
+function draw(mark::EstimatedLandmark, p::Plot{T}) where {T}
+    if mark.cov_ == nothing
+        return
+    else
+        p = scatter!(
+            [mark.pos_[1]],
+            [mark.pos_[2]],
+            markershape = :star,
+            markersize = 10,
+            color = "blue",
+        )
+        p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10), color="blue")
+        p = myellipse!(mark.pos_, mark.cov_[1:2, 1:2], n_std = 3, aspect_ratio = 1)
+    end
+end
+
 mutable struct MapParticle <: AbstractParticle
     pose_::Vector{Float64}
     weight_::Float64
@@ -15,6 +49,27 @@ function Base.copy(p::MapParticle)
     p_ = MapParticle(copy(p.pose_), p.weight_, 0)
     p_.map_ = copy(p.map_)
     return p_
+end
+
+function observation_update(particle::MapParticle, observation::Vector{Vector{Float64}}, distance_dev_rate::Float64, direction_dev::Float64)
+    for obsv in observation
+        d, ϕ = obsv[1], obsv[2]
+        lm_id = convert(Int64, obsv[3])
+        landmark = particle.map_[lm_id +1]
+        if landmark.cov_ == nothing
+            init_landmark_estimation(particle, landmark, d, ϕ, distance_dev_rate, direction_dev)
+        end
+    end
+end
+
+function init_landmark_estimation(particle::MapParticle, lm::EstimatedLandmark, d::Float64, ϕ::Float64, distance_dev_rate::Float64, direction_dev::Float64)
+    θ = pose_[3]
+    lm.pos_ = particle.pose_[1:2] + d * [cos(ϕ+θ), sin(ϕ+θ)]
+    H = matH(particle.pose_, lm.pos_)[1:2, 1:2]
+    Q = matQ(distance_dev_rate * d, direction_dev)
+    lm.cov_ = inv(
+        transpose(H) * inv(Q) * H
+    )
 end
 
 mutable struct FastSlam <: AbstractMcl
@@ -82,5 +137,8 @@ function draw(mcl::FastSlam, p::Plot{T}) where {T}
     pose = mcl.pose_
     annota = "($(round(pose[1], sigdigits=3)), $(round(pose[2], sigdigits=3)), $(round(pose[3], sigdigits=3)))"
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
-    draw(mcl.ml_.map_, p)
+    # draw the belief map of maximum likelihood particle
+    for landmark in mcl.ml_.map_.landmarks_
+        draw(landmark, p)
+    end
 end

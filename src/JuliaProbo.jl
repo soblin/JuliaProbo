@@ -4,10 +4,9 @@ using Reexport
 import RecipesBase: @recipe
 @reexport using Plots
 import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text, @userplot, @series
-import LinearAlgebra: eigen, diagm
 import Random: rand
 import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov
-import LinearAlgebra: Diagonal, I
+import LinearAlgebra: Diagonal, I, eigen, diagm
 import StatsBase: sample, Weights
 import StatsPlots: covellipse!
 import StatsFuns: chisqinvcdf
@@ -19,7 +18,7 @@ export Agent, EstimatorAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, observations, observation_function
 export Landmark, EstimatedLandmark, Map, World, push!, getindex
-export Particle, copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update
+export Particle, copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update, matQ, matH
 export MapParticle, FastSlam
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)

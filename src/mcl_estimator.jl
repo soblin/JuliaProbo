@@ -8,7 +8,7 @@ mutable struct Particle <: AbstractParticle
 end
 
 function Base.copy(p::Particle)
-    p_ = Particle(p.pose_, p.weight_)
+    p_ = Particle(copy(p.pose_), p.weight_)
     return p_
 end
 

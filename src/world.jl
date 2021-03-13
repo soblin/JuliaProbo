@@ -7,7 +7,7 @@ struct Landmark <: AbstractLandmark
 end
 
 function Base.copy(lm::Landmark)
-    return Landmark(lm.pos_, lm.id)
+    return Landmark(copy(lm.pos_), lm.id)
 end
 
 function draw(mark::Landmark, p::Plot{T}) where {T}
@@ -19,40 +19,6 @@ function draw(mark::Landmark, p::Plot{T}) where {T}
         color = "orange",
     )
     p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10))
-end
-
-mutable struct EstimatedLandmark <: AbstractLandmark
-    pos_::Vector{Float64}
-    id::Int64
-    cov_::Union{Matrix{Float64},Nothing}
-    function EstimatedLandmark(id::Int64)
-        # this cov_ initial value is for debugging
-        new([0.0, 0.0], id, [1.0 0.0; 0.0 2.0])
-    end
-end
-
-function Base.copy(lm::EstimatedLandmark)
-    if lm.cov_ == nothing
-        return EstimatedLandmark(lm.pos_, lm.id, nothing)
-    else
-        return EstimatedLandmark(lm.pos_, lm.id, lm.cov_)
-    end
-end
-
-function draw(mark::EstimatedLandmark, p::Plot{T}) where {T}
-    if mark.cov_ == nothing
-        return
-    else
-        p = scatter!(
-            [mark.pos_[1]],
-            [mark.pos_[2]],
-            markershape = :star,
-            markersize = 10,
-            color = "blue",
-        )
-        p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10))
-        p = myellipse!(mark.pos_, mark.cov_[1:2, 1:2], n_std = 3, aspect_ratio = 1)
-    end
 end
 
 mutable struct Map <: AbstractObject
@@ -75,12 +41,6 @@ end
 function Base.push!(map::Map, landmarks::Vector{T}) where {T<:AbstractLandmark}
     for landmark in landmarks
         push!(map.landmarks_, landmark)
-    end
-end
-
-function draw(map::Map, p::Plot{T}) where {T}
-    for landmark in map.landmarks_
-        draw(landmark, p)
     end
 end
 
