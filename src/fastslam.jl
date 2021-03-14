@@ -77,6 +77,15 @@ function observation_update(
                 distance_dev_rate,
                 direction_dev,
             )
+        else
+            observation_update_landmark(
+                particle,
+                landmark,
+                d,
+                ϕ,
+                distance_dev_rate,
+                direction_dev,
+            )
         end
     end
 end
@@ -94,6 +103,28 @@ function init_landmark_estimation(
     H = matH(particle.pose_, lm.pos_)[1:2, 1:2]
     Q = matQ(distance_dev_rate * d, direction_dev)
     lm.cov_ = inv(transpose(H) * inv(Q) * H)
+end
+
+function observation_update_landmark(
+    particle::MapParticle,
+    lm::EstimatedLandmark,
+    d::Float64,
+    ϕ::Float64,
+    distance_dev_rate::Float64,
+    direction_dev::Float64,
+)
+    # estimated position [d, ϕ] from estimated position of landmark
+    estm_z = observation_function(particle.pose_, lm.pos_)
+    if estm_z[1] < 0.01
+        # too close
+        return
+    end
+
+    H = -matH(particle.pose_, lm.pos_)[1:2, 1:2]
+    Q = matQ(distance_dev_rate * estm_z[1], direction_dev)
+    K = lm.cov_ * transpose(H) * inv(Q + H * lm.cov_ * transpose(H))
+    lm.pos_ = K * ([d, ϕ] - estm_z) + lm.pos_
+    lm.cov_ = (Matrix(1.0I, 2, 2) - K * H) * lm.cov_
 end
 
 mutable struct FastSlam <: AbstractMcl
