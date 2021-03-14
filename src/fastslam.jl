@@ -55,6 +55,85 @@ function Base.copy(p::MapParticle)
     return p_
 end
 
+function motion_update2(
+    particle::MapParticle,
+    v::Float64,
+    ω::Float64,
+    dt::Float64,
+    motion_noise_stds::Dict{String,Float64},
+    observation::Vector{Vector{Float64}},
+    distance_dev_rate::Float64,
+    direction_dev::Float64,
+)
+    M = matM(v, ω, dt, motion_noise_stds)
+    A = matA(v, ω, dt, particle.pose_[3])
+    Rₜ = A * M * transpose(A)
+    x̂ = state_transition(particle.pose_, v, ω, dt)
+
+    N = size(observation)[1]
+    for i = 1:N
+        z = observation[i][1:2]
+        idx = convert(Int64, observation[i][3])
+        zₜ̂, Qzₜ, Hxₜ = drawing_params(
+            x̂,
+            particle.map_.landmarks_[idx+1],
+            distance_dev_rate,
+            direction_dev,
+        )
+        Σzₜ = Hxₜ * Rₜ * transpose(Hxₜ) + Qzₜ
+        Σzₜ = (Σzₜ + transpose(Σzₜ)) / 2.0
+        particle.weight_ = pdf(MvNormal(zₜ̂, Σzₜ), z)
+    end
+
+    for i = 1:N
+        obsv = observation[i]
+        z = obsv[1:2]
+        idx = convert(Int64, obsv[3])
+        x̂, Rₜ = gauss_for_drawing(
+            x̂,
+            Rₜ,
+            z,
+            particle.map_.landmarks_[idx+1],
+            distance_dev_rate,
+            direction_dev,
+        )
+    end
+
+    Rₜ = (Rₜ + transpose(Rₜ)) / 2.0
+    particle.pose_ = rand(MvNormal(x̂, Rₜ + Matrix(1.0e-10 * I, 3, 3)))
+end
+
+function drawing_params(
+    x̂::Vector{Float64},
+    lm::EstimatedLandmark,
+    distance_dev_rate::Float64,
+    direction_dev::Float64,
+)
+    d = hypot((x̂[1:2] - lm.pos_)...)
+    Qzₜ̂ = matQ(distance_dev_rate * d, direction_dev)
+    zₜ̂ = observation_function(x̂, lm.pos_)
+    Hm = -matH(x̂, lm.pos_)[1:2, 1:2]
+    Hxₜ = matH(x̂, lm.pos_)
+
+    Qzₜ = Hm * lm.cov_ * transpose(Hm) + Qzₜ̂
+
+    return zₜ̂, Qzₜ, Hxₜ
+end
+
+function gauss_for_drawing(
+    x̂::Vector{Float64},
+    Rₜ::Matrix{Float64},
+    z::Vector{Float64},
+    lm::EstimatedLandmark,
+    distance_dev_rate::Float64,
+    direction_dev::Float64,
+)
+    zₜ̂, Qzₜ, Hxₜ = drawing_params(x̂, lm, distance_dev_rate, direction_dev)
+    K = Rₜ * transpose(Hxₜ) * inv(Qzₜ + Hxₜ * Rₜ * transpose(Hxₜ))
+
+    return K * (z - zₜ̂) + x̂, (Matrix(1.0I, 3, 3) - K * Hxₜ) * Rₜ
+end
+
 function observation_update(
     particle::MapParticle,
     observation::Vector{Vector{Float64}},
@@ -125,9 +204,9 @@ function observation_update_landmark(
     K = lm.cov_ * transpose(H) * inv(Q + H * lm.cov_ * transpose(H))
 
     # update weight
-    Q_z = H * lm.cov_ * transpose(H) + Q
-    Q_z = (Q_z + transpose(Q_z)) / 2.0
-    particle.weight_ *= pdf(MvNormal(estm_z, Q_z), [d, ϕ])
+    # Q_z = H * lm.cov_ * transpose(H) + Q
+    # Q_z = (Q_z + transpose(Q_z)) / 2.0
+    # particle.weight_ *= pdf(MvNormal(estm_z, Q_z), [d, ϕ])
 
     # update landmark position esimate
     lm.pos_ = K * ([d, ϕ] - estm_z) + lm.pos_
@@ -167,6 +246,7 @@ end
 
 mutable struct FastSlam2 <: AbstractMcl
     particles_::Vector{MapParticle}
+    motion_noise_stds::Dict{String,Float64}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
     direction_dev::Float64
@@ -187,6 +267,7 @@ mutable struct FastSlam2 <: AbstractMcl
                 MapParticle(init_pose, 1.0 / particle_num, landmark_num) for
                 i = 1:particle_num
             ],
+            copy(v),
             MvNormal([0.0, 0.0, 0.0, 0.0], cov),
             distance_dev_rate,
             direction_dev,
@@ -210,9 +291,35 @@ function motion_update(
     dt::Float64,
     observation::Vector{Vector{Float64}},
 )
+    not_first_observation = Vector{Vector{Float64}}(undef, 0)
+    M = size(observation)[1]
+    for i = 1:M
+        obsv = observation[i]
+        idx = convert(Int64, obsv[3])
+        if slam.particles_[1].map_.landmarks_[idx+1].cov_ != nothing
+            push!(not_first_observation, obsv)
+        end
+    end
+
     N = length(slam.particles_)
-    for i = 1:N
-        motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
+    if size(not_first_observation)[1] > 0
+        for i = 1:N
+            motion_update2(
+                slam.particles_[i],
+                v,
+                ω,
+                dt,
+                slam.motion_noise_stds,
+                not_first_observation,
+                slam.distance_dev_rate,
+                slam.direction_dev,
+            )
+            #motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
+        end
+    else
+        for i = 1:N
+            motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
+        end
     end
 end
 

@@ -16,7 +16,7 @@
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:200
+    anim = @animate for i = 1:400
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -61,7 +61,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:200
+    anim = @animate for i = 1:400
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
