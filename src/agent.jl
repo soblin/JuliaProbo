@@ -46,11 +46,19 @@ function decision(
     sensor_reset = false,
 )
     estimator = agent.estimator_
-    motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
+
+    if typeof(agent.estimator_) != FastSlam2
+        motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
+    else
+        motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt, observation)
+    end
+
     agent.prev_v_, agent.prev_ω_ = agent.v_, agent.ω_
+
     if typeof(agent.estimator_) == Mcl ||
        typeof(agent.estimator_) == KldMcl ||
-       typeof(agent.estimator_) == FastSlam
+       typeof(agent.estimator_) == FastSlam1 ||
+       typeof(agent.estimator_) == FastSlam2
         observation_update(agent.estimator_, observation, envmap; resample = resample)
     elseif typeof(agent.estimator_) == ResetMcl
         observation_update(
@@ -65,6 +73,7 @@ function decision(
     elseif typeof(agent.estimator_) == KalmanFilter
         observation_update(agent.estimator_, observation)
     end
+
     return agent.v_, agent.ω_
 end
 

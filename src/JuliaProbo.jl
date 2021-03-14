@@ -19,7 +19,7 @@ export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, observations, observation_function
 export Landmark, EstimatedLandmark, Map, World, push!, getindex
 export Particle, copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update, matQ, matH
-export MapParticle, FastSlam
+export MapParticle, FastSlam1, FastSlam2
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")

@@ -170,7 +170,7 @@ function set_ml(mcl::AbstractMcl)
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::AbstractMcl, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::Union{Mcl,ResetMcl,AMcl}, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i = 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)

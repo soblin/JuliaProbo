@@ -134,14 +134,14 @@ function observation_update_landmark(
     lm.cov_ = (Matrix(1.0I, 2, 2) - K * H) * lm.cov_
 end
 
-mutable struct FastSlam <: AbstractMcl
+mutable struct FastSlam1 <: AbstractMcl
     particles_::Vector{MapParticle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
     direction_dev::Float64
     ml_::MapParticle
     pose_::Vector{Float64}
-    function FastSlam(
+    function FastSlam1(
         init_pose::Vector{Float64},
         particle_num::Int64,
         landmark_num::Int64,
@@ -165,40 +165,95 @@ mutable struct FastSlam <: AbstractMcl
     end
 end
 
+mutable struct FastSlam2 <: AbstractMcl
+    particles_::Vector{MapParticle}
+    motion_noise_rate_pdf::MvNormal{Float64}
+    distance_dev_rate::Float64
+    direction_dev::Float64
+    ml_::MapParticle
+    pose_::Vector{Float64}
+    function FastSlam2(
+        init_pose::Vector{Float64},
+        particle_num::Int64,
+        landmark_num::Int64,
+        motion_noise_stds = Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2),
+        distance_dev_rate = 0.14,
+        direction_dev = 0.05,
+    )
+        v = motion_noise_stds
+        cov = Diagonal([v["vv"]^2, v["vω"]^2, v["ωv"]^2, v["ωω"]^2])
+        new(
+            [
+                MapParticle(init_pose, 1.0 / particle_num, landmark_num) for
+                i = 1:particle_num
+            ],
+            MvNormal([0.0, 0.0, 0.0, 0.0], cov),
+            distance_dev_rate,
+            direction_dev,
+            MapParticle(init_pose, 1.0, 0),
+            init_pose,
+        )
+    end
+end
+
+function motion_update(slam::FastSlam1, v::Float64, ω::Float64, dt::Float64)
+    N = length(slam.particles_)
+    for i = 1:N
+        motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
+    end
+end
+
+function motion_update(
+    slam::FastSlam2,
+    v::Float64,
+    ω::Float64,
+    dt::Float64,
+    observation::Vector{Vector{Float64}},
+)
+    N = length(slam.particles_)
+    for i = 1:N
+        motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
+    end
+end
+
 function observation_update(
-    mcl::FastSlam,
+    slam::Union{FastSlam1,FastSlam2},
     observation::Vector{Vector{Float64}},
     envmap::Map;
     resample = true,
 )
     # currently same as the one for mcl::Mcl
-    N = length(mcl.particles_)
+    N = length(slam.particles_)
     for i = 1:N
         observation_update(
-            mcl.particles_[i],
+            slam.particles_[i],
             observation,
             envmap,
-            mcl.distance_dev_rate,
-            mcl.direction_dev,
+            slam.distance_dev_rate,
+            slam.direction_dev,
         )
     end
-    set_ml(mcl)
+    set_ml(slam)
     if resample
-        resampling(mcl)
+        resampling(slam)
     end
 end
 
-function draw(mcl::FastSlam, p::Plot{T}) where {T}
-    xs = [p.pose_[1] for p in mcl.particles_]
-    ys = [p.pose_[2] for p in mcl.particles_]
-    vxs =
-        [cos(p.pose_[3]) * 0.5 * p.weight_ * length(mcl.particles_) for p in mcl.particles_]
-    vys =
-        [sin(p.pose_[3]) * 0.5 * p.weight_ * length(mcl.particles_) for p in mcl.particles_]
+function draw(slam::Union{FastSlam1,FastSlam2}, p::Plot{T}) where {T}
+    xs = [p.pose_[1] for p in slam.particles_]
+    ys = [p.pose_[2] for p in slam.particles_]
+    vxs = [
+        cos(p.pose_[3]) * 0.5 * p.weight_ * length(slam.particles_) for
+        p in slam.particles_
+    ]
+    vys = [
+        sin(p.pose_[3]) * 0.5 * p.weight_ * length(slam.particles_) for
+        p in slam.particles_
+    ]
     p = quiver!(xs, ys, quiver = (vxs, vys), color = "blue", alpha = 0.5)
-    pose = mcl.pose_
+    pose = slam.pose_
     annota = "($(round(pose[1], sigdigits=3)), $(round(pose[2], sigdigits=3)), $(round(pose[3], sigdigits=3)))"
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
     # draw the belief map of maximum likelihood particle
-    draw(mcl.ml_.map_, p)
+    draw(slam.ml_.map_, p)
 end
