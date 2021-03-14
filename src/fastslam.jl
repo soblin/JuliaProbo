@@ -72,6 +72,20 @@ function motion_update2(
 
     N = size(observation)[1]
     for i = 1:N
+        z = observation[i][1:2]
+        idx = convert(Int64, observation[i][3])
+        zₜ̂, Qzₜ, Hxₜ = drawing_params(
+            x̂,
+            particle.map_.landmarks_[idx+1],
+            distance_dev_rate,
+            direction_dev,
+        )
+        Σzₜ = Hxₜ * Rₜ * transpose(Hxₜ) + Qzₜ
+        Σzₜ = (Σzₜ + transpose(Σzₜ)) / 2.0
+        particle.weight_ = pdf(MvNormal(zₜ̂, Σzₜ), z)
+    end
+
+    for i = 1:N
         obsv = observation[i]
         z = obsv[1:2]
         idx = convert(Int64, obsv[3])
@@ -190,9 +204,9 @@ function observation_update_landmark(
     K = lm.cov_ * transpose(H) * inv(Q + H * lm.cov_ * transpose(H))
 
     # update weight
-    Q_z = H * lm.cov_ * transpose(H) + Q
-    Q_z = (Q_z + transpose(Q_z)) / 2.0
-    particle.weight_ *= pdf(MvNormal(estm_z, Q_z), [d, ϕ])
+    # Q_z = H * lm.cov_ * transpose(H) + Q
+    # Q_z = (Q_z + transpose(Q_z)) / 2.0
+    # particle.weight_ *= pdf(MvNormal(estm_z, Q_z), [d, ϕ])
 
     # update landmark position esimate
     lm.pos_ = K * ([d, ϕ] - estm_z) + lm.pos_
