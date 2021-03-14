@@ -123,6 +123,13 @@ function observation_update_landmark(
     H = -matH(particle.pose_, lm.pos_)[1:2, 1:2]
     Q = matQ(distance_dev_rate * estm_z[1], direction_dev)
     K = lm.cov_ * transpose(H) * inv(Q + H * lm.cov_ * transpose(H))
+
+    # update weight
+    Q_z = H * lm.cov_ * transpose(H) + Q
+    Q_z = (Q_z + transpose(Q_z)) / 2.0
+    particle.weight_ *= pdf(MvNormal(estm_z, Q_z), [d, ϕ])
+
+    # update landmark position esimate
     lm.pos_ = K * ([d, ϕ] - estm_z) + lm.pos_
     lm.cov_ = (Matrix(1.0I, 2, 2) - K * H) * lm.cov_
 end

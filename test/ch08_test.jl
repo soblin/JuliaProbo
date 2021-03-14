@@ -1,4 +1,4 @@
-@testset "ch08_fastslam0234" begin
+@testset "ch08_fastslam02345" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
@@ -39,6 +39,6 @@
         )
     end
     if GUI
-        gif(anim, "ch08_fastslam234.gif", fps = 20)
+        gif(anim, "ch08_fastslam2345.gif", fps = 20)
     end
 end
