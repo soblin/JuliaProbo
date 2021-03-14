@@ -1,4 +1,4 @@
-mutable struct Particle
+mutable struct Particle <: AbstractParticle
     pose_::Vector{Float64}
     weight_::Float64
     function Particle(pose::Vector{Float64}, weight::Float64)
@@ -8,12 +8,12 @@ mutable struct Particle
 end
 
 function Base.copy(p::Particle)
-    p_ = Particle(p.pose_, p.weight_)
+    p_ = Particle(copy(p.pose_), p.weight_)
     return p_
 end
 
 function motion_update(
-    p::Particle,
+    p::AbstractParticle,
     v::Float64,
     ω::Float64,
     dt::Float64,
@@ -38,7 +38,7 @@ function observation_update(
         obs_pos = obsv[1:2]
         obs_id = convert(Int64, obsv[3])
 
-        pos_on_map = envmap.landmarks_[obs_id+1].pos
+        pos_on_map = envmap.landmarks_[obs_id+1].pos_
         particle_suggest_pos = observation_function(p.pose_, pos_on_map)
 
         distance_dev = distance_dev_rate * particle_suggest_pos[1]
@@ -46,8 +46,6 @@ function observation_update(
         p.weight_ *= pdf(MvNormal(particle_suggest_pos, cov), obs_pos)
     end
 end
-
-abstract type AbstractMcl <: AbstractEstimator end
 
 mutable struct Mcl <: AbstractMcl
     particles_::Vector{Particle}
@@ -92,7 +90,7 @@ mutable struct Mcl <: AbstractMcl
     end
 end
 
-mutable struct ResetMcl <: AbstractMcl
+mutable struct ResetMcl <: AbstractResetMcl
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -128,7 +126,7 @@ mutable struct ResetMcl <: AbstractMcl
     end
 end
 
-mutable struct AMcl <: AbstractMcl
+mutable struct AMcl <: AbstractResetMcl
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -172,7 +170,7 @@ function set_ml(mcl::AbstractMcl)
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::AbstractMcl, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::Union{Mcl,ResetMcl,AMcl}, v::Float64, ω::Float64, dt::Float64)
     N = length(mcl.particles_)
     for i = 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
@@ -287,17 +285,11 @@ function draw(mcl::AbstractMcl, p::Plot{T}) where {T}
     p = annotate!(pose[1] + 1.0, pose[2] + 1.0, text(annota, 10))
 end
 
-#=
-function random_reset(mcl::AbstractMcl)
-    N = length(mcl.particles_)
-    for i = 1:N
-        mcl.particles_[i].pose_ = uniform(mcl.reset_distrib)
-        mcl.particles_[i].weight_ = 1.0 / N
-    end
-end
-=#
-
-function sensor_resetting(mcl::ResetMcl, observation::Vector{Vector{Float64}}, envmap::Map)
+function sensor_resetting(
+    mcl::AbstractResetMcl,
+    observation::Vector{Vector{Float64}},
+    envmap::Map,
+)
     d_obs = findmin([obsv[1] for obsv in observation])
     nearest_ind = d_obs[2]
     d_obs = d_obs[1]
@@ -308,18 +300,23 @@ function sensor_resetting(mcl::ResetMcl, observation::Vector{Vector{Float64}}, e
 
     N = length(mcl.particles_)
     for i = 1:N
-        sensor_resetting_draw(mcl, mcl.particles_[i], envmap[landmark_id].pos, d_obs, ψ_obs)
+        sensor_resetting_draw(
+            mcl,
+            mcl.particles_[i],
+            envmap[landmark_id].pos_,
+            d_obs,
+            ψ_obs,
+        )
     end
 end
 
 function sensor_resetting_draw(
-    mcl::AbstractMcl,
+    mcl::AbstractResetMcl,
     p::Particle,
     landmark_pos::Vector{Float64},
     d_obs::Float64,
     ϕ_obs::Float64,
 )
-    @assert typeof(mcl) == ResetMcl || typeof(mcl) == AMcl
     ψ = (rand() - 0.5) * (2 * pi) # ∈ [-π, π]
     d = rand(Normal(d_obs, (mcl.distance_dev_rate * d_obs)^2))
     p.pose_[1] = landmark_pos[1] + d * cos(ψ)
@@ -352,11 +349,11 @@ function adaptive_resetting(mcl::AMcl, observation::Vector{Vector{Float64}}, env
     for n = 1:convert(Int64, floor(sl_num))
         ind = rand(1:N)
         p = mcl.particles_[ind]
-        sensor_resetting_draw(mcl, p, envmap[landmark_id].pos, obs_d, obs_ψ)
+        sensor_resetting_draw(mcl, p, envmap[landmark_id].pos_, obs_d, obs_ψ)
     end
 end
 
-mutable struct KldMcl <: AbstractEstimator
+mutable struct KldMcl <: AbstractMcl
     particles_::Vector{Particle}
     motion_noise_rate_pdf::MvNormal{Float64}
     distance_dev_rate::Float64
@@ -395,12 +392,6 @@ mutable struct KldMcl <: AbstractEstimator
             0,
         )
     end
-end
-
-function set_ml(mcl::KldMcl)
-    ind = findmax([p.weight_ for p in mcl.particles_])[2]
-    mcl.ml_ = copy(mcl.particles_[ind])
-    mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
 function motion_update(mcl::KldMcl, v::Float64, ω::Float64, dt::Float64)

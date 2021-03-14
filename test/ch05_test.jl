@@ -18,7 +18,7 @@
     robot = RealRobot(initial_pose, circling, RealCamera(landmarks); color = "red")
     push!(world, robot)
     push!(world, m)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -26,7 +26,9 @@
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl05.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl05.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl07" begin
@@ -41,7 +43,7 @@ end
     circling = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling, nothing; color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -49,7 +51,9 @@ end
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl07.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl07.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl09" begin
@@ -69,7 +73,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -77,7 +81,9 @@ end
         v, ω = decision(circling_agent, z, m)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl09.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl09.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl11" begin
@@ -98,7 +104,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -106,7 +112,9 @@ end
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl11.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl11.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl12" begin
@@ -127,7 +135,7 @@ end
     circling_agent = EstimatorAgent(0.2, 10.0 * pi / 180, dt, estimator)
     robot = RealRobot(initial_pose, circling_agent, RealCamera(landmarks); color = "red")
     push!(world, robot)
-    anim = @animate for i = 1:5
+    anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
@@ -135,7 +143,9 @@ end
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl12.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl12.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl13" begin
@@ -164,7 +174,9 @@ end
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl13.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl13.gif", fps = 20)
+    end
 end
 
 @testset "ch05_mcl14" begin
@@ -192,5 +204,7 @@ end
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
-    #gif(anim, "ch05_mcl14.gif", fps=10)
+    if GUI
+        gif(anim, "ch05_mcl14.gif", fps = 20)
+    end
 end

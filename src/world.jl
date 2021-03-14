@@ -1,34 +1,44 @@
-struct Landmark <: AbstractObject
-    pos::Vector{Float64}
+struct Landmark <: AbstractLandmark
+    pos_::Vector{Float64}
     id::Int64
     function Landmark(pos::Vector{Float64}, id::Int64)
         new(pos, id)
     end
 end
 
+function Base.copy(lm::Landmark)
+    return Landmark(copy(lm.pos_), lm.id)
+end
+
 function draw(mark::Landmark, p::Plot{T}) where {T}
     p = scatter!(
-        [mark.pos[1]],
-        [mark.pos[2]],
+        [mark.pos_[1]],
+        [mark.pos_[2]],
         markershape = :star,
         markersize = 10,
         color = "orange",
     )
-    p = annotate!(mark.pos[1] + 0.5, mark.pos[2] + 0.5, text("id: $(mark.id)", 10))
+    p = annotate!(mark.pos_[1] + 0.5, mark.pos_[2] + 0.5, text("id: $(mark.id)", 10))
 end
 
 mutable struct Map <: AbstractObject
-    landmarks_::Vector{Landmark}
+    landmarks_::Vector{AbstractLandmark}
     function Map()
-        new(Vector{Landmark}[])
+        new(Vector{AbstractLandmark}[])
     end
 end
 
-function Base.push!(map::Map, landmark::Landmark)
+function Base.copy(src::Map)
+    dst = Map()
+    push!(dst, copy(src.landmarks_))
+    return dst
+end
+
+function Base.push!(map::Map, landmark::AbstractLandmark)
     push!(map.landmarks_, landmark)
 end
 
-function Base.push!(map::Map, landmarks::Vector{Landmark})
+function Base.push!(map::Map, landmarks::Vector{T}) where {T<:AbstractLandmark}
     for landmark in landmarks
         push!(map.landmarks_, landmark)
     end

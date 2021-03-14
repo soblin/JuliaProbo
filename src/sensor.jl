@@ -37,7 +37,7 @@ function observations(camera::Union{IdealCamera,Nothing}, camera_pose::Vector{Fl
     observed = [[1.0]]
     pop!(observed)
     for i = 1:n
-        z = observation_function(camera_pose, camera.landmarks_[i].pos)
+        z = observation_function(camera_pose, camera.landmarks_[i].pos_)
         if visible(camera, z)
             push!(observed, copy(z))
         end
@@ -173,7 +173,7 @@ function observations(
     observed = [[1.0]]
     pop!(observed)
     for i = 1:n
-        z = observation_function(camera_pose, camera.landmarks_[i].pos)
+        z = observation_function(camera_pose, camera.landmarks_[i].pos_)
         if phantom
             if rand(Uniform()) < camera.phantom_prob
                 phantom_pos = gen_phantom(camera.phantom_distrib)
