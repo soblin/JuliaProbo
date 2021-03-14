@@ -44,6 +44,12 @@ function Base.push!(map::Map, landmarks::Vector{T}) where {T<:AbstractLandmark}
     end
 end
 
+function draw(map::Map, p::Plot{T}) where {T}
+    for landmark in map.landmarks_
+        draw(landmark, p)
+    end
+end
+
 function Base.getindex(map::Map, index::Int)
     return map.landmarks_[index]
 end

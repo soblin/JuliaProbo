@@ -26,7 +26,7 @@ function motion_update(
 end
 
 function observation_update(
-    p::AbstractParticle,
+    p::Particle,
     observation::Vector{Vector{Float64}},
     envmap::Map,
     distance_dev_rate::Float64,
