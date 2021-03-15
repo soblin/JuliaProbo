@@ -1,9 +1,12 @@
 module JuliaProbo
 
-import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text
+using Reexport
+import RecipesBase: @recipe
+@reexport using Plots
+import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text, @userplot, @series
 import Random: rand
 import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov
-import LinearAlgebra: Diagonal, I
+import LinearAlgebra: Diagonal, I, eigen, diagm
 import StatsBase: sample, Weights
 import StatsPlots: covellipse!
 import StatsFuns: chisqinvcdf
@@ -11,12 +14,13 @@ import StatsFuns: chisqinvcdf
 export AbstractObject, AbstractSensor, AbstractAgent, AbstractEstimator
 export draw
 export PoseUniform, uniform
-export Agent, EstimatorAgent, decision
+export Agent, EstimatorAgent, LoggerAgent, decision
 export IdealRobot, RealRobot, state_transition
-export IdealCamera, RealCamera, observations, observation_function
+export IdealCamera, RealCamera, PsiCamera, observations, observation_function
 export Landmark, EstimatedLandmark, Map, World, push!, getindex
-export Particle, copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update
-export MapParticle, FastSlam
+export Particle,
+    copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update, matQ, matH, matM, matA
+export MapParticle, FastSlam1, FastSlam2
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
