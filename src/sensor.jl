@@ -1,4 +1,4 @@
-mutable struct IdealCamera <: AbstractSensor
+mutable struct IdealCamera <: AbstractCamera
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}
     distance_range::Vector{Float64}
@@ -72,7 +72,7 @@ struct Uniform2D
     end
 end
 
-mutable struct RealCamera <: AbstractSensor
+mutable struct RealCamera <: AbstractCamera
     landmarks_::Vector{Landmark}
     last_observation_::Vector{Vector{Float64}}
     distance_range::Vector{Float64}
@@ -117,12 +117,12 @@ mutable struct RealCamera <: AbstractSensor
     end
 end
 
-function visible(camera::RealCamera, polarpos::Vector{Float64})
+function visible(camera::AbstractCamera, polarpos::Vector{Float64})
     return camera.distance_range[1] <= polarpos[1] <= camera.distance_range[2] &&
            camera.direction_range[1] <= polarpos[2] <= camera.direction_range[2]
 end
 
-function apply_noise(camera::RealCamera, z::Vector{Float64})
+function apply_noise(camera::AbstractCamera, z::Vector{Float64})
     d = z[1]
     ϕ = z[2]
     errored_d = rand(Normal(d, d * camera.distance_noise_rate))
@@ -130,7 +130,7 @@ function apply_noise(camera::RealCamera, z::Vector{Float64})
     return [errored_d, errored_ϕ]
 end
 
-function apply_bias(camera::RealCamera, z::Vector{Float64})
+function apply_bias(camera::AbstractCamera, z::Vector{Float64})
     d = z[1]
     ϕ = z[2]
     d += d * camera.distance_bias_rate_std
@@ -144,7 +144,7 @@ function gen_phantom(dist::Uniform2D)
     return dist.low .+ (x .* c)
 end
 
-function if_overlook(camera::RealCamera)
+function if_overlook(camera::AbstractCamera)
     if rand(Uniform()) < camera.overlook_prob
         return true
     else
@@ -152,7 +152,7 @@ function if_overlook(camera::RealCamera)
     end
 end
 
-function apply_occlusion(camera::RealCamera, z::Vector{Float64})
+function apply_occlusion(camera::AbstractCamera, z::Vector{Float64})
     if rand(Uniform()) < camera.occlusion_prob
         return [z[1] + rand(Uniform()) * (camera.distance_range[2] - z[1]), z[2]]
     else
@@ -201,7 +201,86 @@ function observations(
     return observed
 end
 
-function draw(camera::RealCamera, camera_pose::Vector{Float64}, p::Plot{T}) where {T}
+mutable struct PsiCamera <: AbstractCamera
+    landmarks_::Vector{Landmark}
+    last_observation_::Vector{Vector{Float64}}
+    distance_range::Vector{Float64}
+    direction_range::Vector{Float64}
+    distance_noise_rate::Float64
+    direction_noise::Float64
+    distance_bias_rate_std::Float64
+    direction_bias::Float64
+    phantom_prob::Float64
+    phantom_distrib::Uniform2D
+    overlook_prob::Float64
+    occlusion_prob::Float64
+    function PsiCamera(
+        landmarks::Vector{Landmark},
+        distance_range = [0.5, 6.0],
+        direction_range = [-pi / 3, pi / 3];
+        distance_noise_rate = 0.1,
+        direction_noise = pi / 90,
+        distance_bias_rate_stddev = 0.1,
+        direction_bias_stddev = pi / 90,
+        phantom_prob = 0.0,
+        phantom_range_x = [-5.0, 5.0],
+        phantom_range_y = [-5.0, 5.0],
+        overlook_prob = 0.1,
+        occlusion_prob = 0.0,
+    )
+
+        new(
+            landmarks,
+            Vector{Vector{Float64}}(undef, 0),
+            distance_range,
+            direction_range,
+            distance_noise_rate,
+            direction_noise,
+            rand(Normal(0.0, distance_bias_rate_stddev)),
+            rand(Normal(0.0, direction_bias_stddev)),
+            phantom_prob,
+            Uniform2D(phantom_range_x, phantom_range_y),
+            overlook_prob,
+            occlusion_prob,
+        )
+    end
+end
+
+function observations(camera::PsiCamera, camera_pose::Vector{Float64})
+    orientation_noise = pi / 90.0
+    n = size(camera.landmarks_)[1]
+    observed = Vector{Vector{Float64}}(undef, 0)
+    for i = 1:n
+        landmark = camera.landmarks_[i]
+        ψ = rand(
+            Normal(
+                atan(camera_pose[2] - landmark.pos_[2], camera_pose[1] - landmark.pos_[1]),
+                orientation_noise,
+            ),
+        )
+        z = observation_function(camera_pose, landmark.pos_)
+
+        if rand(Uniform()) < camera.phantom_prob
+            z = observation_function(camera_pose, phantom_pos)
+            phantom_pos = gen_phantom(camera.phantom_distrib)
+        end
+
+        if if_overlook(camera)
+            # not added
+            continue
+        end
+
+        if visible(camera, z)
+            z = apply_bias(camera, z)
+            z = apply_noise(camera, z)
+            push!(observed, [z[1], z[2], ψ, landmark.id])
+        end
+    end
+    camera.last_observation_ = copy(observed)
+    return observed
+end
+
+function draw(camera::AbstractCamera, camera_pose::Vector{Float64}, p::Plot{T}) where {T}
     for obsv in camera.last_observation_
         x, y, θ = camera_pose
         distance, direction = obsv[1], obsv[2]

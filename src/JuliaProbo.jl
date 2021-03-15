@@ -14,9 +14,9 @@ import StatsFuns: chisqinvcdf
 export AbstractObject, AbstractSensor, AbstractAgent, AbstractEstimator
 export draw
 export PoseUniform, uniform
-export Agent, EstimatorAgent, decision
+export Agent, EstimatorAgent, LoggerAgent, decision
 export IdealRobot, RealRobot, state_transition
-export IdealCamera, RealCamera, observations, observation_function
+export IdealCamera, RealCamera, PsiCamera, observations, observation_function
 export Landmark, EstimatedLandmark, Map, World, push!, getindex
 export Particle,
     copy, Mcl, KalmanFilter, KldMcl, ResetMcl, AMcl, motion_update, matQ, matH, matM, matA
