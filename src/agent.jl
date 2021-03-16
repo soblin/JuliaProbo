@@ -110,7 +110,7 @@ function decision(agent::LoggerAgent, observation::Vector{Vector{Float64}})
 
     agent.step_ += 1
     flush(agent.log_)
-
+    agent.pose_ = state_transition(agent.pose_, agent.v_, agent.ω_, agent.dt)
     return agent.v_, agent.ω_
 end
 
