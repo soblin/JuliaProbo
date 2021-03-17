@@ -105,12 +105,12 @@ function decision(agent::LoggerAgent, observation::Vector{Vector{Float64}})
     for i = 1:N
         obsv = observation[i]
         # obsv = [idx, d, ϕ, ψ]
-        write(agent.log_, "z $(agent.step_) $(obsv[4]) $(obsv[1]) $(obsv[2]) $(obsv[3])\n")
+        write(agent.log_, "z $(agent.step_) $(convert(Int64, obsv[4])) $(obsv[1]) $(obsv[2]) $(obsv[3])\n")
     end
 
     agent.step_ += 1
     flush(agent.log_)
-
+    agent.pose_ = state_transition(agent.pose_, agent.v_, agent.ω_, agent.dt)
     return agent.v_, agent.ω_
 end
 

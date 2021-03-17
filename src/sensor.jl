@@ -261,8 +261,8 @@ function observations(camera::PsiCamera, camera_pose::Vector{Float64})
         z = observation_function(camera_pose, landmark.pos_)
 
         if rand(Uniform()) < camera.phantom_prob
-            z = observation_function(camera_pose, phantom_pos)
             phantom_pos = gen_phantom(camera.phantom_distrib)
+            z = observation_function(camera_pose, phantom_pos)
         end
 
         if if_overlook(camera)
