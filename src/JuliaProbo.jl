@@ -17,7 +17,7 @@ export PoseUniform, uniform
 export Agent, EstimatorAgent, LoggerAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, PsiCamera, observations, observation_function
-export Landmark, EstimatedLandmark, Map, World, push!, getindex
+export Landmark, EstimatedLandmark, Map, World, Goal, push!, getindex
 export Particle,
     copy,
     Mcl,

@@ -90,3 +90,17 @@ function draw(world::World, annota::Nothing)
     end
     return p
 end
+
+struct  Goal <: AbstractObject
+    x::Float64
+    y::Float64
+    radius::Float64
+    function Goal(x::Float64, y::Float64, radius = 0.3)
+        new(x, y, radius)
+    end
+end
+
+function draw(g::Goal, p::Plot{T}) where {T}
+    p = plot!([g.x, g.x], [g.y, g.y+0.6], color="black", linewidth=2.0)
+    p = plot!([g.x + 0.08], [g.y + 0.5], markershape=:rtriangle, markersize=9, color="red")
+end
