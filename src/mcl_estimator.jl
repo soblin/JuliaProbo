@@ -170,7 +170,13 @@ function set_ml(mcl::AbstractMcl)
     mcl.pose_ = copy(mcl.ml_.pose_)
 end
 
-function motion_update(mcl::Union{Mcl,ResetMcl,AMcl}, v::Float64, ω::Float64, dt::Float64)
+function motion_update(
+    mcl::Union{Mcl,ResetMcl,AMcl},
+    v::Float64,
+    ω::Float64,
+    dt::Float64;
+    kwargs...,
+)
     N = length(mcl.particles_)
     for i = 1:N
         motion_update(mcl.particles_[i], v, ω, dt, mcl.motion_noise_rate_pdf)
@@ -181,8 +187,12 @@ function observation_update(
     mcl::Mcl,
     observation::Vector{Vector{Float64}},
     envmap::Map;
-    resample = true,
+    kwargs...,
 )
+    resample = true
+    if haskey(kwargs, :resample)
+        resample = convert(Bool, kwargs[:resample])
+    end
     N = length(mcl.particles_)
     for i = 1:N
         observation_update(
@@ -203,9 +213,16 @@ function observation_update(
     mcl::ResetMcl,
     observation::Vector{Vector{Float64}},
     envmap::Map;
-    resample = true,
-    sensor_reset = true,
+    kwargs...,
 )
+    resample = true
+    if haskey(kwargs, :resample)
+        resample = convert(Bool, kwargs[:resample])
+    end
+    sensor_reset = true
+    if haskey(kwargs, :sensor_reset)
+        sensor_reset = convert(Bool, kwargs[:sensor_reset])
+    end
     N = length(mcl.particles_)
     for i = 1:N
         observation_update(
@@ -230,7 +247,12 @@ function observation_update(
     end
 end
 
-function observation_update(mcl::AMcl, observation::Vector{Vector{Float64}}, envmap::Map)
+function observation_update(
+    mcl::AMcl,
+    observation::Vector{Vector{Float64}},
+    envmap::Map;
+    kwargs...,
+)
     N = length(mcl.particles_)
     for i = 1:N
         observation_update(
@@ -394,7 +416,7 @@ mutable struct KldMcl <: AbstractMcl
     end
 end
 
-function motion_update(mcl::KldMcl, v::Float64, ω::Float64, dt::Float64)
+function motion_update(mcl::KldMcl, v::Float64, ω::Float64, dt::Float64; kwargs...)
     ws = [p.weight_ for p in mcl.particles_]
 
     if sum(ws) < 1e-100
@@ -429,8 +451,12 @@ function observation_update(
     mcl::KldMcl,
     observation::Vector{Vector{Float64}},
     envmap::Map;
-    resample = false,
+    kwargs...,
 )
+    resample = true
+    if haskey(kwargs, :resample)
+        resample = convert(Bool, kwargs[:resample])
+    end
     N = length(mcl.particles_)
     for i = 1:N
         observation_update(

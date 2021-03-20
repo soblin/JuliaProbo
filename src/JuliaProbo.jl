@@ -11,13 +11,15 @@ import StatsBase: sample, Weights
 import StatsPlots: covellipse!
 import StatsFuns: chisqinvcdf
 
-export AbstractObject, AbstractSensor, AbstractAgent, AbstractEstimator
+export AbstractObject,
+    AbstractWorld, AbstractSensor, AbstractRobot, AbstractAgent, AbstractEstimator
 export draw
 export PoseUniform, uniform
 export Agent, EstimatorAgent, LoggerAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, PsiCamera, observations, observation_function
-export Landmark, EstimatedLandmark, Map, World, Goal, push!, getindex
+export Landmark,
+    EstimatedLandmark, Map, World, Goal, Puddle, PuddleWorld, push!, getindex, puddle_depth
 export Particle,
     copy,
     Mcl,

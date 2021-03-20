@@ -1,4 +1,4 @@
-mutable struct IdealRobot <: AbstractObject
+mutable struct IdealRobot <: AbstractRobot
     pose_::Vector{Float64}
     agent_::AbstractAgent
     radius_::Float64
@@ -83,7 +83,7 @@ function state_transition(robot::IdealRobot, v::Float64, ω::Float64, dt::Float6
     return new_pose
 end
 
-mutable struct RealRobot <: AbstractObject
+mutable struct RealRobot <: AbstractRobot
     pose_::Vector{Float64}
     agent_::AbstractAgent
     radius_::Float64

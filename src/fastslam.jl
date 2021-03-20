@@ -277,20 +277,15 @@ mutable struct FastSlam2 <: AbstractMcl
     end
 end
 
-function motion_update(slam::FastSlam1, v::Float64, ω::Float64, dt::Float64)
+function motion_update(slam::FastSlam1, v::Float64, ω::Float64, dt::Float64; kwargs...)
     N = length(slam.particles_)
     for i = 1:N
         motion_update(slam.particles_[i], v, ω, dt, slam.motion_noise_rate_pdf)
     end
 end
 
-function motion_update(
-    slam::FastSlam2,
-    v::Float64,
-    ω::Float64,
-    dt::Float64,
-    observation::Vector{Vector{Float64}},
-)
+function motion_update(slam::FastSlam2, v::Float64, ω::Float64, dt::Float64; kwargs...)
+    observation = kwargs[:observation] # Vector{Vector{Float64}}
     not_first_observation = Vector{Vector{Float64}}(undef, 0)
     M = size(observation)[1]
     for i = 1:M
@@ -327,8 +322,12 @@ function observation_update(
     slam::Union{FastSlam1,FastSlam2},
     observation::Vector{Vector{Float64}},
     envmap::Map;
-    resample = true,
+    kwargs...,
 )
+    resample = true
+    if haskey(kwargs, :resample)
+        resample = convert(Bool, kwargs[:resample])
+    end
     # currently same as the one for mcl::Mcl
     N = length(slam.particles_)
     for i = 1:N

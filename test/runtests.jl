@@ -4,7 +4,7 @@ using Test
 using JuliaFormatter
 
 ENV["GKSwstype"] = "nul"
-GUI = false
+GUI = true
 
 format("../src")
 format("../test")
@@ -16,3 +16,4 @@ include("ch06_test.jl")
 include("ch07_test.jl")
 include("ch08_test.jl")
 include("ch09_test.jl")
+include("ch10_test.jl")
