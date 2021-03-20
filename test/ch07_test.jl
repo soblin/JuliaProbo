@@ -20,7 +20,7 @@
         annota = "t = $(round(t, sigdigits=3))[s]"
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
         p = draw(world, annota)
-        v, ω = decision(circling_agent, z, envmap)
+        v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
     if GUI
@@ -206,7 +206,7 @@ end
         annota = "t = $(round(t, sigdigits=3))[s]"
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
         p = draw(world, annota)
-        v, ω = decision(circling_agent, z, envmap)
+        v, ω = decision(circling_agent, z, envmap; resample=true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
     if GUI
