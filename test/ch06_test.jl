@@ -30,17 +30,18 @@
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
+        # update robot observation
+        z1 = observations(robot1.sensor_, robot1.pose_; noise = true, bias = true)
+        z2 = observations(robot2.sensor_, robot2.pose_; noise = true, bias = true)
+        z3 = observations(robot3.sensor_, robot3.pose_; noise = true, bias = true)
         p = draw(world, annota)
         # robot1
-        z1 = observations(robot1.sensor_, robot1.pose_; noise = true, bias = true)
         v1, ω1 = decision(agent1, z1, envmap)
         state_transition(robot1, v1, ω1, dt; move_noise = true, vel_bias_noise = true)
         # robot2
-        z2 = observations(robot2.sensor_, robot2.pose_; noise = true, bias = true)
         v2, ω2 = decision(agent2, z2, envmap)
         state_transition(robot2, v2, ω2, dt; move_noise = true, vel_bias_noise = true)
         # robot3
-        z3 = observations(robot3.sensor_, robot3.pose_; noise = true, bias = true)
         v3, ω3 = decision(agent3, z3, envmap)
         state_transition(robot3, v3, ω3, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -86,10 +87,14 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
+        zs = []
         for i = 1:n_robots
             z = observations(robots[i].sensor_, robots[i].pose_; noise = true, bias = true)
-            v, ω = decision(agents[i], z, envmap)
+            push!(zs, copy(z))
+        end
+        p = draw(world, annota)
+        for i = 1:n_robots
+            v, ω = decision(agents[i], zs[i], envmap)
             state_transition(robots[i], v, ω, dt; move_noise = true, vel_bias_noise = true)
         end
     end
