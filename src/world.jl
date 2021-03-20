@@ -73,7 +73,7 @@ function draw(world::AbstractWorld, annota::String)
     xpos = world.xlim_[1] + (world.xlim_[2] - world.xlim_[1]) * 0.2
     ypos = world.ylim_[2] - 0.1 * (world.ylim_[2] - world.ylim_[1])
     if annota != nothing
-        p = annotate!(xpos, ypos, annota)
+        p = annotate!(xpos, ypos, text(annota, 10))
     end
     for obj in world.objects_
         draw(obj, p)
@@ -95,9 +95,14 @@ struct Goal <: AbstractObject
     x::Float64
     y::Float64
     radius::Float64
-    function Goal(x::Float64, y::Float64, radius = 0.3)
-        new(x, y, radius)
+    value::Float64
+    function Goal(x::Float64, y::Float64, radius = 0.3, value = 0.0)
+        new(x, y, radius, value)
     end
+end
+
+function inside(g::Goal, pose::Vector{Float64})
+    return g.radius > hypot(g.x - pose[1], g.y - pose[2])
 end
 
 function draw(g::Goal, p::Plot{T}) where {T}
@@ -124,7 +129,7 @@ function inside(puddle::Puddle, pose::Vector{Float64})
     x = pose[1]
     y = pose[2]
     xl, xu = puddle.lowerleft[1], puddle.upperright[1]
-    yl, yu = puddle.lowerleft[1], puddle.upperright[2]
+    yl, yu = puddle.lowerleft[2], puddle.upperright[2]
     return (xl <= x <= xu) && (yl <= y <= yu)
 end
 
@@ -171,4 +176,18 @@ end
 
 function puddle_depth(world::PuddleWorld, pose::Vector{Float64})
     return sum([p.depth * convert(Float64, inside(p, pose)) for p in world.puddles_])
+end
+
+function update_status(world::PuddleWorld)
+    for iter = 1:lastindex(world.robots_)
+        robot = world.robots_[iter]
+        # use the ground truth position
+        robot.agent_.puddle_depth_ = puddle_depth(world, robot.pose_)
+        for g in world.goals_
+            if inside(g, robot.pose_)
+                robot.agent_.in_goal_ = true
+                robot.agent_.final_value_ = g.value
+            end
+        end
+    end
 end

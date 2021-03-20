@@ -15,11 +15,21 @@ export AbstractObject,
     AbstractWorld, AbstractSensor, AbstractRobot, AbstractAgent, AbstractEstimator
 export draw
 export PoseUniform, uniform
-export Agent, EstimatorAgent, LoggerAgent, decision
+export Agent, EstimatorAgent, LoggerAgent, PuddleIgnoreAgent, decision, policy
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, PsiCamera, observations, observation_function
 export Landmark,
-    EstimatedLandmark, Map, World, Goal, Puddle, PuddleWorld, push!, getindex, puddle_depth
+    EstimatedLandmark,
+    Map,
+    World,
+    Goal,
+    Puddle,
+    PuddleWorld,
+    push!,
+    getindex,
+    puddle_depth,
+    inside,
+    update_status
 export Particle,
     copy,
     Mcl,
