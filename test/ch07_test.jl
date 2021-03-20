@@ -18,8 +18,8 @@
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -49,8 +49,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -81,8 +81,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -119,8 +119,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(agent, z, envmap)
         state_transition(
             robot,
@@ -164,8 +164,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(
             robot,
@@ -204,8 +204,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -246,8 +246,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap; sensor_reset = true)
         state_transition(
             robot,
@@ -291,8 +291,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap)
         state_transition(
             robot,
@@ -339,7 +339,6 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(
             robot.sensor_,
             robot.pose_;
@@ -347,6 +346,7 @@ end
             bias = true,
             phantom = true,
         )
+        p = draw(world, annota)
         v, ω = decision(circling_agent, z, envmap)
         state_transition(
             robot,

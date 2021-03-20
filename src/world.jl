@@ -125,7 +125,7 @@ function inside(puddle::Puddle, pose::Vector{Float64})
     y = pose[2]
     xl, xu = puddle.lowerleft[1], puddle.upperright[1]
     yl, yu = puddle.lowerleft[1], puddle.upperright[2]
-    return (xl < x < xu) && (yl < y < yu)
+    return (xl <= x <= xu) && (yl <= y <= yu)
 end
 
 function draw(puddle::Puddle, p::Plot{T}) where {T}

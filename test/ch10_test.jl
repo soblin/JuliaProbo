@@ -31,8 +31,8 @@
     anim = @animate for i = 1:50
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(robot.sensor_, robot.pose_; noise = false, bias = false)
+        p = draw(world, annota)
         v, ω = decision(agent, z, envmap)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end

@@ -18,7 +18,6 @@
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         p = draw(world, annota)
-        plot(p)
         for j = 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
             @assert obsv == nothing
@@ -50,11 +49,11 @@ end
     dt = 0.1
     anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        p = draw(world, annota)
         obsv1 = observations(nobias_robot.sensor_, nobias_robot.pose_)
         v1, ω1 = decision(circling_agent, obsv1)
         obsv2 = observations(biased_robot.sensor_, biased_robot.pose_)
         v2, ω2 = decision(circling_agent, obsv2)
+        p = draw(world, annota)
         state_transition(nobias_robot, v1, ω1, dt)
         state_transition(biased_robot, v2, ω2, dt; vel_bias_noise = true)
     end
@@ -89,14 +88,22 @@ end
     dt = 0.1
     anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        p = draw(world, annota)
+        zs = []
         for j = 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
-            v, ω = decision(circling_agent, obsv)
+            if obsv == nothing
+                push!(zs, nothing)
+            else
+                push!(zs, copy(obsv))
+            end
+        end
+        obsv1 = observations(ideal_robot.sensor_, ideal_robot.pose_)
+        p = draw(world, annota)
+        for j = 1:10
+            v, ω = decision(circling_agent, zs[j])
             state_transition(robots[j], v, ω, dt; stuck_noise = true)
         end
-        obsv = observations(ideal_robot.sensor_, ideal_robot.pose_)
-        v, ω = decision(circling_agent, obsv)
+        v, ω = decision(circling_agent, obsv1)
         state_transition(ideal_robot, v, ω, dt)
     end
     if GUI
@@ -129,14 +136,22 @@ end
     dt = 0.1
     anim = @animate for i = 1:300
         annota = "t = $(round(dt * i, sigdigits=3))[s]"
-        p = draw(world, annota)
+        zs = []
         for j = 1:10
             obsv = observations(robots[j].sensor_, robots[j].pose_)
-            v, ω = decision(circling_agent, obsv)
+            if obsv == nothing
+                push!(zs, nothing)
+            else
+                push!(zs, copy(obsv))
+            end
+        end
+        obsv1 = observations(ideal_robot.sensor_, ideal_robot.pose_)
+        p = draw(world, annota)
+        for j = 1:10
+            v, ω = decision(circling_agent, zs[j])
             state_transition(robots[j], v, ω, dt; kidnap = true)
         end
-        obsv = observations(ideal_robot.sensor_, ideal_robot.pose_)
-        v, ω = decision(circling_agent, obsv)
+        v, ω = decision(circling_agent, obsv1)
         state_transition(ideal_robot, v, ω, dt)
     end
     if GUI
@@ -161,9 +176,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
-        plot(p)
         obsv = observations(robot.sensor_, robot.pose_; noise = true)
+        p = draw(world, annota)
         v, ω = decision(circling_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
@@ -194,9 +208,8 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
-        plot(p)
         obsv = observations(robot.sensor_, robot.pose_; noise = true, bias = true)
+        p = draw(world, annota)
         v, ω = decision(straight_agent, obsv)
         state_transition(robot, v, ω, dt)
     end
@@ -226,7 +239,6 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(
             robot.sensor_,
             robot.pose_;
@@ -234,6 +246,7 @@ end
             bias = true,
             phantom = true,
         )
+        p = draw(world, annota)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -263,7 +276,6 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(
             robot.sensor_,
             robot.pose_;
@@ -271,6 +283,7 @@ end
             bias = true,
             overlook = true,
         )
+        p = draw(world, annota)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
@@ -300,7 +313,6 @@ end
     anim = @animate for i = 1:300
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
-        p = draw(world, annota)
         z = observations(
             robot.sensor_,
             robot.pose_;
@@ -308,6 +320,7 @@ end
             bias = true,
             occlusion = true,
         )
+        p = draw(world, annota)
         v, ω = decision(circling, z)
         state_transition(robot, v, ω, dt; move_noise = true, vel_bias_noise = true)
     end
