@@ -88,7 +88,7 @@ function matQ(distance_dev::Float64, direction_dev::Float64)
     return Diagonal([distance_dev^2, direction_dev^2])
 end
 
-function motion_update(kf::KalmanFilter, v::Float64, ω::Float64, dt::Float64)
+function motion_update(kf::KalmanFilter, v::Float64, ω::Float64, dt::Float64; kwargs...)
     if abs(ω) < 1e-5
         ω = 1e-5
     end
@@ -103,7 +103,12 @@ function motion_update(kf::KalmanFilter, v::Float64, ω::Float64, dt::Float64)
     kf.pose_ = mean(kf.belief_)
 end
 
-function observation_update(kf::KalmanFilter, observation::Vector{Vector{Float64}})
+function observation_update(
+    kf::KalmanFilter,
+    observation::Vector{Vector{Float64}},
+    envmap = Map();
+    kwargs...,
+)
     μ = mean(kf.belief_)
     Σ = cov(kf.belief_)
     envmap = kf.map_

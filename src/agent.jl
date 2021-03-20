@@ -14,6 +14,8 @@ function decision(agent::Agent, observation::Vector{Vector{Float64}})
     return agent.v_, agent.ω_
 end
 
+function draw(agent::Agent, p::Plot{T}) where {T} end
+
 mutable struct EstimatorAgent <: AbstractAgent
     v_::Float64
     ω_::Float64
@@ -42,39 +44,28 @@ function decision(
     agent::EstimatorAgent,
     observation::Vector{Vector{Float64}},
     envmap::Map;
-    resample = true,
-    sensor_reset = false,
+    kwargs...,
 )
     estimator = agent.estimator_
 
-    if typeof(agent.estimator_) != FastSlam2
-        motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt)
-    else
-        motion_update(estimator, agent.prev_v_, agent.prev_ω_, agent.dt, observation)
-    end
+    motion_update(
+        estimator,
+        agent.prev_v_,
+        agent.prev_ω_,
+        agent.dt;
+        kwargs...,
+        observation = observation,
+    )
 
     agent.prev_v_, agent.prev_ω_ = agent.v_, agent.ω_
 
-    if typeof(agent.estimator_) == Mcl ||
-       typeof(agent.estimator_) == KldMcl ||
-       typeof(agent.estimator_) == FastSlam1 ||
-       typeof(agent.estimator_) == FastSlam2
-        observation_update(agent.estimator_, observation, envmap; resample = resample)
-    elseif typeof(agent.estimator_) == ResetMcl
-        observation_update(
-            agent.estimator_,
-            observation,
-            envmap;
-            resample = resample,
-            sensor_reset = sensor_reset,
-        )
-    elseif typeof(agent.estimator_) == AMcl
-        observation_update(agent.estimator_, observation, envmap)
-    elseif typeof(agent.estimator_) == KalmanFilter
-        observation_update(agent.estimator_, observation)
-    end
+    observation_update(agent.estimator_, observation, envmap; kwargs...)
 
     return agent.v_, agent.ω_
+end
+
+function draw(agent::EstimatorAgent, p::Plot{T}) where {T}
+    draw(agent.estimator_, p)
 end
 
 mutable struct LoggerAgent <: AbstractAgent
@@ -115,12 +106,6 @@ function decision(agent::LoggerAgent, observation::Vector{Vector{Float64}})
     flush(agent.log_)
     agent.pose_ = state_transition(agent.pose_, agent.v_, agent.ω_, agent.dt)
     return agent.v_, agent.ω_
-end
-
-function draw(agent::Agent, p::Plot{T}) where {T} end
-
-function draw(agent::EstimatorAgent, p::Plot{T}) where {T}
-    draw(agent.estimator_, p)
 end
 
 function draw(agent::LoggerAgent, p::Plot{T}) where {T} end
