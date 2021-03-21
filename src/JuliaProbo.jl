@@ -55,5 +55,7 @@ include("sensor.jl")
 include("mcl_estimator.jl")
 include("kf_estimator.jl")
 include("fastslam.jl")
+include("mdp_world.jl")
+include("mdp.jl")
 
 end # module
