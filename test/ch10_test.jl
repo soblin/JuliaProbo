@@ -91,3 +91,10 @@ end
         gif(anim, "ch10_puddle_world4.gif", fps = 10)
     end
 end
+
+@testset "ch10_policy_evaluation4" begin
+    pe = PolicyEvaluator([0.1, 0.1, pi / 20], Goal(-3.0, -3.0))
+    init_value(pe)
+    init_policy(pe)
+    init_state_transition_probs(pe, 0.1, 10)
+end
