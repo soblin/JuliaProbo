@@ -15,21 +15,10 @@ export AbstractObject,
     AbstractWorld, AbstractSensor, AbstractRobot, AbstractAgent, AbstractEstimator
 export draw
 export PoseUniform, uniform
-export Agent, EstimatorAgent, LoggerAgent, PuddleIgnoreAgent, decision, policy
+export Agent, EstimatorAgent, LoggerAgent, decision
 export IdealRobot, RealRobot, state_transition
 export IdealCamera, RealCamera, PsiCamera, observations, observation_function
-export Landmark,
-    EstimatedLandmark,
-    Map,
-    World,
-    Goal,
-    Puddle,
-    PuddleWorld,
-    push!,
-    getindex,
-    puddle_depth,
-    inside,
-    update_status
+export Landmark, EstimatedLandmark, Map, World, push!, getindex
 export Particle,
     copy,
     Mcl,
@@ -44,6 +33,15 @@ export Particle,
     matA,
     matF
 export MapParticle, FastSlam1, FastSlam2
+export Goal, Puddle, PuddleWorld, puddle_depth, inside, update_status
+export PuddleIgnoreAgent,
+    policy,
+    PolicyEvaluator,
+    init_value,
+    init_policy,
+    init_state_transition_probs,
+    init_depth,
+    policy_evaluation_sweep
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
@@ -55,5 +53,7 @@ include("sensor.jl")
 include("mcl_estimator.jl")
 include("kf_estimator.jl")
 include("fastslam.jl")
+include("mdp_world.jl")
+include("mdp.jl")
 
 end # module
