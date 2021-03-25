@@ -115,7 +115,7 @@ end
 
     Δ = 1e100
     sweep_num = 0
-    while Δ > 0.1
+    while Δ > 1.0
         Δ = policy_evaluation_sweep(pe)
         sweep_num += 1
     end
