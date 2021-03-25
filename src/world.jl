@@ -6,9 +6,11 @@ struct Landmark <: AbstractLandmark
     end
 end
 
+#=
 function Base.copy(lm::Landmark)
     return Landmark(copy(lm.pos_), lm.id)
 end
+=#
 
 function draw(mark::Landmark, p::Plot{T}) where {T}
     p = scatter!(

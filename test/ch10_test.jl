@@ -105,7 +105,7 @@ end
     world = PuddleWorld(xlim, ylim)
     push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
     push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
-    
+
     sampling_num = 10
     pe = PolicyEvaluator([0.1, 0.1, pi / 20], Goal(-3.0, -3.0), dt = 0.1)
     init_value(pe)
@@ -115,7 +115,7 @@ end
 
     Δ = 1e100
     sweep_num = 0
-    while Δ > 0.1
+    while Δ > 1.0
         Δ = policy_evaluation_sweep(pe)
         sweep_num += 1
     end
