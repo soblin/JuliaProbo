@@ -42,7 +42,3 @@ function _covellipse_args(
     λ, U = eigen(Σ)
     μ, n_std * U * diagm(.√λ)
 end
-_covellipse_args(args; n_std) = error(
-    "Wrong inputs for covellipse: $(typeof.(args)). " *
-    "Expected real-valued vector μ, real-valued matrix Σ.",
-)

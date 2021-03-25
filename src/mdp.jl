@@ -83,9 +83,12 @@ mutable struct PolicyEvaluator
     policy_::AbstractArray{Float64,4}
     actions::Set{Vector{Float64}}
     state_transition_probs::Dict{
-        Tuple{Float64,Float64,Int64},
-        Vector{Tuple{Vector{Int64},Float64}},
+        Tuple{Float64,Float64,Int64}, # key is (v::Float64, ω::Float64, θ_index::Int64,)
+        Vector{Tuple{Vector{Int64},Float64}}, # value is vector of ([tran_x_id, tran_y_id, tran_z_id], prob,)
     }
+    depth::AbstractArray{Float64, 2}
+    dt::Float64
+    puddle_coeff::Float64
 end
 
 function set_final_state(
@@ -157,7 +160,7 @@ end
 
 function init_state_transition_probs(
     pe::PolicyEvaluator,
-    time_interval::Float64,
+    dt::Float64,
     sampling_num::Int64,
 )
     reso = pe.reso
@@ -186,7 +189,7 @@ function init_state_transition_probs(
                     for dθ in dθs
                         before = [dx, dy, dθ + (i_θ - 1) * reso[3]] .+ pose_min
                         before_index = [1, 1, i_θ]
-                        after = state_transition(before, a[1], a[2], time_interval)
+                        after = state_transition(before, a[1], a[2], dt)
                         after_index_ = (after - pose_min) ./ reso
                         after_index = map(x -> convert(Int64, floor(x) + 1), after_index_)
                         push!(transitions, after_index - before_index)
@@ -201,12 +204,38 @@ function init_state_transition_probs(
     end
 end
 
+function init_depth(pe::PolicyEvaluator, world::PuddleWorld, sampling_num::Int64)
+    reso = pe.reso
+    dxs = collect(range(0, reso[1], length=sampling_num))
+    dys = collect(range(0, reso[2], length=sampling_num))
+    index_nums = pe.index_nums
+    pose_min = pe.pose_min
+    puddles = world.puddles_
+    depth = pe.depth
+    
+    for x in 0:index_nums[1]-1
+        for y in 0:index_nums[2]-1
+            for dx in dxs
+                for  dy in dys
+                    pose = pose_min .+ (reso .* [x, y, 0]) .+ [dx, dy, 0]
+                    for puddle in puddles
+                        depth[x+1, y+1] += ( puddle.depth * ( convert(Float64, inside(puddle, pose)) ) )
+                    end
+                end
+            end
+            depth[x+1, y+1] /= (sampling_num)^2
+        end
+    end
+end
+
 # constructor
 function PolicyEvaluator(
     reso::Vector{Float64},
-    goal::Goal,
+    goal::Goal;
     lowerleft = [-4.0, -4.0],
     upperright = [4.0, 4.0],
+    dt = 0.1,
+    puddle_coeff = 100.0,
 )
     pose_min = vcat(lowerleft, [0.0])
     pose_max = vcat(upperright, [2pi])
@@ -219,7 +248,8 @@ function PolicyEvaluator(
     actions = Set{Vector{Float64}}()
     state_transition_probs =
         Dict{Tuple{Float64,Float64,Int64},Vector{Tuple{Vector{Int64},Float64}}}()
-
+    depth = zeros(Float64, index_nums[1], index_nums[2])
+    
     return PolicyEvaluator(
         pose_min,
         pose_max,
@@ -232,5 +262,8 @@ function PolicyEvaluator(
         policy_,
         actions,
         state_transition_probs,
+        depth,
+        dt,
+        puddle_coeff,
     )
 end

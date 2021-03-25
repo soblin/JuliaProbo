@@ -35,7 +35,7 @@ export Particle,
 export MapParticle, FastSlam1, FastSlam2
 export Goal, Puddle, PuddleWorld, puddle_depth, inside, update_status
 export PuddleIgnoreAgent,
-    policy, PolicyEvaluator, init_value, init_policy, init_state_transition_probs
+    policy, PolicyEvaluator, init_value, init_policy, init_state_transition_probs, init_depth
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
