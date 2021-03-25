@@ -41,7 +41,8 @@ export PuddleIgnoreAgent,
     init_policy,
     init_state_transition_probs,
     init_depth,
-    policy_evaluation_sweep
+    policy_evaluation_sweep,
+    DynamicProgramming
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
@@ -55,5 +56,7 @@ include("kf_estimator.jl")
 include("fastslam.jl")
 include("mdp_world.jl")
 include("mdp.jl")
+
+const DynamicProgramming = PolicyEvaluator
 
 end # module
