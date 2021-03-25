@@ -86,7 +86,7 @@ mutable struct PolicyEvaluator
         Tuple{Float64,Float64,Int64}, # key is (v::Float64, ω::Float64, θ_index::Int64,)
         Vector{Tuple{Vector{Int64},Float64}}, # value is vector of ([tran_x_id, tran_y_id, tran_z_id], prob,)
     }
-    depth::AbstractArray{Float64, 2}
+    depth::AbstractArray{Float64,2}
     dt::Float64
     puddle_coeff::Float64
 end
@@ -158,11 +158,7 @@ function init_policy(pe::PolicyEvaluator)
     end
 end
 
-function init_state_transition_probs(
-    pe::PolicyEvaluator,
-    dt::Float64,
-    sampling_num::Int64,
-)
+function init_state_transition_probs(pe::PolicyEvaluator, dt::Float64, sampling_num::Int64)
     reso = pe.reso
     indices = pe.indices
     policy = pe.policy_
@@ -206,20 +202,21 @@ end
 
 function init_depth(pe::PolicyEvaluator, world::PuddleWorld, sampling_num::Int64)
     reso = pe.reso
-    dxs = collect(range(0, reso[1], length=sampling_num))
-    dys = collect(range(0, reso[2], length=sampling_num))
+    dxs = collect(range(0, reso[1], length = sampling_num))
+    dys = collect(range(0, reso[2], length = sampling_num))
     index_nums = pe.index_nums
     pose_min = pe.pose_min
     puddles = world.puddles_
     depth = pe.depth
-    
-    for x in 0:index_nums[1]-1
-        for y in 0:index_nums[2]-1
+
+    for x = 0:index_nums[1]-1
+        for y = 0:index_nums[2]-1
             for dx in dxs
-                for  dy in dys
+                for dy in dys
                     pose = pose_min .+ (reso .* [x, y, 0]) .+ [dx, dy, 0]
                     for puddle in puddles
-                        depth[x+1, y+1] += ( puddle.depth * ( convert(Float64, inside(puddle, pose)) ) )
+                        depth[x+1, y+1] +=
+                            (puddle.depth * (convert(Float64, inside(puddle, pose))))
                     end
                 end
             end
@@ -249,7 +246,7 @@ function PolicyEvaluator(
     state_transition_probs =
         Dict{Tuple{Float64,Float64,Int64},Vector{Tuple{Vector{Int64},Float64}}}()
     depth = zeros(Float64, index_nums[1], index_nums[2])
-    
+
     return PolicyEvaluator(
         pose_min,
         pose_max,
@@ -266,4 +263,50 @@ function PolicyEvaluator(
         dt,
         puddle_coeff,
     )
+end
+
+function out_correction(pe::PolicyEvaluator, index::Vector{Int64})
+    θ_ind = (index[3] + pe.index_nums[3]) % (pe.index_nums[3])
+    if θ_ind == 0
+        θ_ind = pe.index_nums[3]
+    end
+    return (index[1], index[2], θ_ind)
+end
+
+function action_value(
+    pe::PolicyEvaluator,
+    index::Vector{Int64},
+    value_function::AbstractArray{Float64,3},
+)
+    v, ω = pe.policy_[index..., :]
+    value = 0.0
+    state_transition_probs = pe.state_transition_probs
+    for trans_probs in state_transition_probs[(v, ω, index[3])]
+        trans_ind = trans_probs[1]
+        prob = trans_probs[2]
+        after_ = [index...] .+ trans_ind
+        after = out_correction(pe, after_)
+        reward = -pe.dt * pe.depth[after[1], after[2]] * pe.puddle_coeff - pe.dt
+        value += (value_function[after...] + reward) * prob
+    end
+    return value
+end
+
+function policy_evaluation_sweep(pe::PolicyEvaluator)
+    indices = pe.indices
+    final_state_flags = pe.final_state_flags_
+    value_function = copy(pe.value_function_)
+    max_Δ = 0.0
+    for index in indices
+        if final_state_flags[index...] == 0.0
+            q1 = value_function[index...]
+            q2 = action_value(pe, [index...], value_function)
+            pe.value_function_[index...] = q2
+            Δ = abs(q2 - q1)
+            if Δ > max_Δ
+                max_Δ = Δ
+            end
+        end
+    end
+    return max_Δ
 end
