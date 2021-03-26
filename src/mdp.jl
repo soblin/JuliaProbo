@@ -290,6 +290,7 @@ function action_value(
     index::Vector{Int64},
     value_function::AbstractArray{Float64,3};
     out_penalty = false,
+    γ = 1.0
 )
     v, ω = action[1], action[2]
     value = 0.0
@@ -302,12 +303,12 @@ function action_value(
         reward =
             -pe.dt * pe.depth[after[1], after[2]] * pe.puddle_coeff - pe.dt +
             out_reward * convert(Float64, out_penalty)
-        value += (value_function[after...] + reward) * prob
+        value += (γ * value_function[after...] + reward) * prob
     end
     return value
 end
 
-function policy_evaluation_sweep(pe::PolicyEvaluator)
+function policy_evaluation_sweep(pe::PolicyEvaluator; γ = 1.0)
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
     value_function = copy(pe.value_function_)
@@ -316,7 +317,7 @@ function policy_evaluation_sweep(pe::PolicyEvaluator)
         if final_state_flags[index...] == 0.0
             q1 = value_function[index...]
             action = pe.policy_[index..., :]
-            q2 = action_value(pe, action, [index...], value_function)
+            q2 = action_value(pe, action, [index...], value_function; γ = γ)
             pe.value_function_[index...] = q2
             Δ = abs(q2 - q1)
             if Δ > max_Δ
@@ -327,7 +328,7 @@ function policy_evaluation_sweep(pe::PolicyEvaluator)
     return max_Δ
 end
 
-function value_iteration_sweep(pe::PolicyEvaluator)
+function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
     max_Δ = 0.0
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
@@ -337,7 +338,7 @@ function value_iteration_sweep(pe::PolicyEvaluator)
             max_a = nothing
             max_q = -1e100
             for action in pe.actions
-                q = action_value(pe, action, [index...], value_function; out_penalty = true)
+                q = action_value(pe, action, [index...], value_function; out_penalty = true, γ = 1.0)
                 if q > max_q
                     max_a = copy(action)
                     max_q = q
@@ -350,4 +351,36 @@ function value_iteration_sweep(pe::PolicyEvaluator)
         end
     end
     return max_Δ
+end
+
+function policy_iteration_sweep(pe::PolicyEvaluator; vi_sweep_thresh = 0.1, vi_sweep_num = 1000, γ = 1.0)
+    for sweep_num in 1:vi_sweep_num
+        vi = policy_evaluation_sweep(pe; γ = γ)
+        if vi < vi_sweep_thresh
+            break
+        end
+    end
+
+    action_switch_num = 0
+    indices = pe.indices
+    final_state_flags = pe.final_state_flags_
+    value_function = copy(pe.value_function_)
+    policy_old = copy(pe.policy_)
+    for index in indices
+        if final_state_flags[index...] == 0.0
+            max_a = nothing
+            max_q = -1e100
+            for action in pe.actions
+                q = action_value(pe, action, [index...], value_function; out_penalty = true, γ = 1.0)
+                if q > max_q
+                    max_a = copy(action)
+                    max_q = q
+                end
+            end
+            Δ = abs(value_function[index...] - max_q)
+            max_Δ = max(Δ, max_Δ)
+            pe.value_function_[index...] = max_q
+            pe.policy_[index..., :] = max_a
+        end        
+    end
 end
