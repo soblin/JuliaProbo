@@ -115,14 +115,14 @@ end
 
     Δ = 1e100
     sweep_num = 0
-    while Δ > 1.0
+    while Δ > 1.0 && sweep_num < 10
         Δ = policy_evaluation_sweep(pe)
         sweep_num += 1
     end
     println("$(sweep_num): Δ = $(Δ)")
 end
 
-@testset "ch10_dynamic_programming1" begin
+@testset "ch10_dp1_value_iteration" begin
     xlim = [-5.0, 5.0]
     ylim = [-5.0, 5.0]
     world = PuddleWorld(xlim, ylim)
@@ -138,9 +138,32 @@ end
 
     Δ = 1e100
     sweep_num = 0
-    while Δ > 1.0 && sweep_num < 100
+    while Δ > 1.0 && sweep_num < 10
         Δ = value_iteration_sweep(pe)
         sweep_num += 1
     end
     println("$(sweep_num): Δ = $(Δ)")
+end
+
+@testset "ch10_dp2_policy_iteration" begin
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    world = PuddleWorld(xlim, ylim)
+    push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
+    push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
+
+    sampling_num = 10
+    dp = PolicyEvaluator([0.1, 0.1, pi / 20], Goal(-3.0, -3.0), dt = 0.1)
+    init_value(dp)
+    init_policy(dp)
+    init_state_transition_probs(dp, 0.1, sampling_num)
+    init_depth(dp, world, sampling_num)
+
+    action_switch_rate = 1.0
+    sweep_num = 0
+    while action_switch_rate > 0.05 && sweep_num < 10
+        action_switch_rate = policy_iteration_sweep(dp)
+        sweep_num += 1
+    end
+    println("$(sweep_num)th: $(action_switch_rate)")
 end
