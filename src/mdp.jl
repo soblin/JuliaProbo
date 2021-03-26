@@ -290,7 +290,7 @@ function action_value(
     index::Vector{Int64},
     value_function::AbstractArray{Float64,3};
     out_penalty = false,
-    γ = 1.0
+    γ = 1.0,
 )
     v, ω = action[1], action[2]
     value = 0.0
@@ -338,7 +338,14 @@ function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
             max_a = nothing
             max_q = -1e100
             for action in pe.actions
-                q = action_value(pe, action, [index...], value_function; out_penalty = true, γ = 1.0)
+                q = action_value(
+                    pe,
+                    action,
+                    [index...],
+                    value_function;
+                    out_penalty = true,
+                    γ = 1.0,
+                )
                 if q > max_q
                     max_a = copy(action)
                     max_q = q
@@ -353,34 +360,40 @@ function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
     return max_Δ
 end
 
-function policy_iteration_sweep(pe::PolicyEvaluator; vi_sweep_thresh = 0.1, vi_sweep_num = 1000, γ = 1.0)
-    for sweep_num in 1:vi_sweep_num
-        vi = policy_evaluation_sweep(pe; γ = γ)
-        if vi < vi_sweep_thresh
-            break
-        end
-    end
+function policy_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
+    vi = policy_evaluation_sweep(pe; γ = γ)
 
     action_switch_num = 0
+    total_num = 0
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
-    value_function = copy(pe.value_function_)
-    policy_old = copy(pe.policy_)
+    value_function = pe.value_function_
     for index in indices
         if final_state_flags[index...] == 0.0
+            total_num += 1
             max_a = nothing
             max_q = -1e100
             for action in pe.actions
-                q = action_value(pe, action, [index...], value_function; out_penalty = true, γ = 1.0)
+                q = action_value(
+                    pe,
+                    action,
+                    [index...],
+                    value_function;
+                    out_penalty = true,
+                    γ = 1.0,
+                )
                 if q > max_q
                     max_a = copy(action)
                     max_q = q
                 end
             end
-            Δ = abs(value_function[index...] - max_q)
-            max_Δ = max(Δ, max_Δ)
-            pe.value_function_[index...] = max_q
+            before_a = copy(pe.policy_[index..., :])
+            if max_a != before_a
+                action_switch_num += 1
+            end
             pe.policy_[index..., :] = max_a
-        end        
+        end
     end
+
+    return 1.0 * action_switch_num / total_num
 end
