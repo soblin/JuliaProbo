@@ -41,7 +41,9 @@ export PuddleIgnoreAgent,
     init_policy,
     init_state_transition_probs,
     init_depth,
+    action_value,
     policy_evaluation_sweep,
+    value_iteration_sweep,
     DynamicProgramming
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)

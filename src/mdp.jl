@@ -265,28 +265,43 @@ function PolicyEvaluator(
     )
 end
 
-function out_correction(pe::PolicyEvaluator, index::Vector{Int64})
+function out_correction(pe::PolicyEvaluator, index_::Vector{Int64})
+    index = copy(index_)
     θ_ind = (index[3] + pe.index_nums[3]) % (pe.index_nums[3])
     if θ_ind == 0
         θ_ind = pe.index_nums[3]
     end
-    return (index[1], index[2], θ_ind)
+    out_reward = 0.0
+    for i = 1:2
+        if index[i] < 1
+            index[i] = 1
+            out_reward = -1e100
+        elseif index[i] > pe.index_nums[i]
+            index[i] = pe.index_nums[i]
+            out_reward = -1e100
+        end
+    end
+    return (index[1], index[2], θ_ind), out_reward
 end
 
 function action_value(
     pe::PolicyEvaluator,
+    action::Vector{Float64},
     index::Vector{Int64},
-    value_function::AbstractArray{Float64,3},
+    value_function::AbstractArray{Float64,3};
+    out_penalty = false,
 )
-    v, ω = pe.policy_[index..., :]
+    v, ω = action[1], action[2]
     value = 0.0
     state_transition_probs = pe.state_transition_probs
     for trans_probs in state_transition_probs[(v, ω, index[3])]
         trans_ind = trans_probs[1]
         prob = trans_probs[2]
         after_ = [index...] .+ trans_ind
-        after = out_correction(pe, after_)
-        reward = -pe.dt * pe.depth[after[1], after[2]] * pe.puddle_coeff - pe.dt
+        after, out_reward = out_correction(pe, after_)
+        reward =
+            -pe.dt * pe.depth[after[1], after[2]] * pe.puddle_coeff - pe.dt +
+            out_reward * convert(Float64, out_penalty)
         value += (value_function[after...] + reward) * prob
     end
     return value
@@ -300,12 +315,38 @@ function policy_evaluation_sweep(pe::PolicyEvaluator)
     for index in indices
         if final_state_flags[index...] == 0.0
             q1 = value_function[index...]
-            q2 = action_value(pe, [index...], value_function)
+            action = pe.policy_[index..., :]
+            q2 = action_value(pe, action, [index...], value_function)
             pe.value_function_[index...] = q2
             Δ = abs(q2 - q1)
             if Δ > max_Δ
                 max_Δ = Δ
             end
+        end
+    end
+    return max_Δ
+end
+
+function value_iteration_sweep(pe::PolicyEvaluator)
+    max_Δ = 0.0
+    indices = pe.indices
+    final_state_flags = pe.final_state_flags_
+    value_function = copy(pe.value_function_)
+    for index in indices
+        if final_state_flags[index...] == 0.0
+            max_a = nothing
+            max_q = -1e100
+            for action in pe.actions
+                q = action_value(pe, action, [index...], value_function; out_penalty = true)
+                if q > max_q
+                    max_a = copy(action)
+                    max_q = q
+                end
+            end
+            Δ = abs(value_function[index...] - max_q)
+            max_Δ = max(Δ, max_Δ)
+            pe.value_function_[index...] = max_q
+            pe.policy_[index..., :] = max_a
         end
     end
     return max_Δ
