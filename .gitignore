@@ -1,2 +1,3 @@
 sensor_data/
-*.gif
+main.jl
+notebook/*.txt
