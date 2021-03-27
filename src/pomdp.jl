@@ -43,8 +43,8 @@ function policy(agent::DpPolicyAgent, pose::Vector{Float64}, goal = nothing)
         index[3] = index_nums[3]
     end
     for i in [1, 2]
-        if index[i] < 0
-            index[i] = 0
+        if index[i] < 1
+            index[i] = 1
         end
         if index[i] > index_nums[i]
             index[i] = index_nums[i]
