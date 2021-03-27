@@ -46,6 +46,7 @@ export PuddleIgnoreAgent,
     value_iteration_sweep,
     policy_iteration_sweep,
     DynamicProgramming
+export DpPolicyAgent
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
@@ -59,6 +60,7 @@ include("kf_estimator.jl")
 include("fastslam.jl")
 include("mdp_world.jl")
 include("mdp.jl")
+include("pomdp.jl")
 
 const DynamicProgramming = PolicyEvaluator
 
