@@ -1,7 +1,6 @@
 using JuliaProbo
 using Plots
 using Test
-using JuliaFormatter
 
 ENV["GKSwstype"] = "nul"
 GUI = false
