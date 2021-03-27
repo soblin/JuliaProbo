@@ -8,6 +8,7 @@ mutable struct EstimatedLandmark <: AbstractLandmark
     end
 end
 
+#=
 function Base.copy(lm::EstimatedLandmark)
     if lm.cov_ == nothing
         return EstimatedLandmark(copy(lm.pos_), lm.id, nothing)
@@ -15,6 +16,7 @@ function Base.copy(lm::EstimatedLandmark)
         return EstimatedLandmark(copy(lm.pos_), lm.id, copy(lm.cov_))
     end
 end
+=#
 
 function draw(mark::EstimatedLandmark, p::Plot{T}) where {T}
     if mark.cov_ == nothing

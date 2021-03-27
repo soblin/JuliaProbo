@@ -7,9 +7,10 @@ Re-implementation of [『詳解　確率ロボティクス』](https://github.co
 
 ## Dependency
 
-- julia(1.5.3)
+- julia(1.6.0)
 - jupyter(python3)
 - seaborn(python3)
+- matplotlib(python3)
 
 ## Branch
 

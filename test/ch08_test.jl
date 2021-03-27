@@ -27,7 +27,7 @@
             phantom = true,
         )
         p = draw(world, annota)
-        v, ω = decision(circling_agent, z, envmap)
+        v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(
             robot,
             v,
@@ -72,7 +72,7 @@ end
             phantom = true,
         )
         p = draw(world, annota)
-        v, ω = decision(circling_agent, z, envmap)
+        v, ω = decision(circling_agent, z, envmap; resample = true)
         state_transition(
             robot,
             v,
