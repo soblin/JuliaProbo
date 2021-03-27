@@ -54,7 +54,7 @@ function decision(agent::PuddleIgnoreAgent, observation::Vector{Vector{Float64}}
         return 0.0, 0.0
     end
     motion_update(agent.estimator_, agent.prev_v_, agent.prev_ω_, agent.dt)
-    obseravtion = Vector{Vector{Float64}}(undef, 0)
+    # obseravtion = Vector{Vector{Float64}}(undef, 0)
     observation_update(agent.estimator_, observation)
     agent.total_reward_ += agent.dt * reward_per_sec(agent)
 
