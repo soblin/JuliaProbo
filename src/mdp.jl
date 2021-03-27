@@ -69,6 +69,7 @@ function draw(agent::PuddleIgnoreAgent, p::Plot{T}) where {T}
     annota2 = "total reward: $(round(agent.total_reward_ + agent.final_value_, sigdigits=3))"
     p = annotate!(x + 1.0, y - 0.5, text(annota1, 10))
     p = annotate!(x + 1.0, y - 1.0, text(annota2, 10))
+    draw(agent.estimator_, p)
 end
 
 mutable struct PolicyEvaluator
