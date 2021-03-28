@@ -1,4 +1,4 @@
-mutable struct PuddleIgnoreAgent <: AbstractAgent
+mutable struct PuddleIgnoreAgent <: AbstractMDPAgent
     v_::Float64
     ω_::Float64
     dt::Float64
@@ -23,11 +23,12 @@ mutable struct PuddleIgnoreAgent <: AbstractAgent
     end
 end
 
-function reward_per_sec(agent::PuddleIgnoreAgent)
+function reward_per_sec(agent::AbstractMDPAgent)
     return -1.0 - agent.puddle_depth_ * agent.puddle_coeff
 end
 
-function policy(agent::PuddleIgnoreAgent, goal::Goal)
+function policy(agent::PuddleIgnoreAgent)
+    goal = agent.goal
     cur_bel_pose = agent.estimator_.pose_
     x, y, θ = cur_bel_pose[1], cur_bel_pose[2], cur_bel_pose[3]
     dx, dy = goal.x - x, goal.y - y
@@ -49,21 +50,25 @@ function policy(agent::PuddleIgnoreAgent, goal::Goal)
     v, ω
 end
 
-function decision(agent::PuddleIgnoreAgent, observation::Vector{Vector{Float64}})
+function decision(
+    agent::AbstractMDPAgent,
+    observation::Vector{Vector{Float64}},
+    envmap = Map();
+    kwargs...,
+)
     if agent.in_goal_
         return 0.0, 0.0
     end
     motion_update(agent.estimator_, agent.prev_v_, agent.prev_ω_, agent.dt)
-    # obseravtion = Vector{Vector{Float64}}(undef, 0)
-    observation_update(agent.estimator_, observation)
+    observation_update(agent.estimator_, observation, envmap; kwargs...)
     agent.total_reward_ += agent.dt * reward_per_sec(agent)
 
-    v, ω = policy(agent, agent.goal)
+    v, ω = policy(agent)
     agent.prev_v_, agent.prev_ω_ = v, ω
     return v, ω
 end
 
-function draw(agent::PuddleIgnoreAgent, p::Plot{T}) where {T}
+function draw(agent::AbstractMDPAgent, p::Plot{T}) where {T}
     x, y = agent.estimator_.pose_[1], agent.estimator_.pose_[2]
     annota1 = "reward/sec: $(round(reward_per_sec(agent), sigdigits=3))"
     annota2 = "total reward: $(round(agent.total_reward_ + agent.final_value_, sigdigits=3))"

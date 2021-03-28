@@ -12,7 +12,12 @@ import StatsPlots: covellipse!
 import StatsFuns: chisqinvcdf
 
 export AbstractObject,
-    AbstractWorld, AbstractSensor, AbstractRobot, AbstractAgent, AbstractEstimator
+    AbstractWorld,
+    AbstractSensor,
+    AbstractRobot,
+    AbstractAgent,
+    AbstractEstimator,
+    AbstractMDPAgent
 export draw
 export PoseUniform, uniform
 export Agent, EstimatorAgent, LoggerAgent, decision
@@ -35,7 +40,6 @@ export Particle,
 export MapParticle, FastSlam1, FastSlam2
 export Goal, Puddle, PuddleWorld, puddle_depth, inside, update_status
 export PuddleIgnoreAgent,
-    policy,
     PolicyEvaluator,
     init_value,
     init_policy,
@@ -46,7 +50,7 @@ export PuddleIgnoreAgent,
     value_iteration_sweep,
     policy_iteration_sweep,
     DynamicProgramming
-export DpPolicyAgent
+export DpPolicyAgent, QMDPAgent
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
