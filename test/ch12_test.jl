@@ -87,7 +87,7 @@ end
     end
 end
 
-@testset "ch12_qmdp1" begin
+@testset "ch12_qmdp12" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
