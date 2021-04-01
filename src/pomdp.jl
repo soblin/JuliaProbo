@@ -335,7 +335,7 @@ function BeliefDP(
     )
 end
 
-function set_belief_state(
+function set_belief_final_state(
     reso::Vector{Float64},
     goal::Goal,
     pose_min::Vector{Float64},
@@ -361,7 +361,7 @@ function init_value(agent::BeliefDP)
             for id3 = 1:index_nums[3]
                 for id4 = 1:index_nums[4]
                     index = (id1, id2, id3, id4)
-                    val = set_belief_state(reso, goal, pose_min, [index...])
+                    val = set_belief_final_state(reso, goal, pose_min, [index...])
                     @inbounds f[index...] = val
                     @inbounds v[index...] = (val == 1.0) ? goal.value : (-100.0)
                     # this line is problematic if we use @distributed
@@ -486,11 +486,16 @@ function action_value(
     transition = agent.state_transition_probs[(action[1], action[2], index[3])]
     depth = agent.depth
     puddle_coeff = agent.puddle_coeff
+    sigma_transition = agent.motion_sigma_transition_probs
     for (delta, prob) in transition
         after, out_reward = correct_index(agent, index[1:3] + [delta...])
         push!(after, 1)
-        reward = -dt + depth[after[1:2]...] * puddle_coeff - dt + out_reward
-        value += (value_function[after...] + reward) * prob
+        reward = -dt * depth[after[1:2]...] * puddle_coeff - dt + out_reward
+        # value += (value_function[after...] + reward) * prob
+        for (σ_after, σ_prob) in sigma_transition[(index[4], action)]
+            after[4] = σ_after
+            value += (value_function[after...] + reward) * σ_prob * prob
+        end
     end
     return value
 end
@@ -500,6 +505,7 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
     indices = agent.indices
     final_state_flags = agent.final_state_flags_
     value_function = copy(agent.value_function_)
+    # value_function = agent.value_function_
     for index in indices
         if final_state_flags[index...] == 0.0
             max_a = nothing
@@ -520,8 +526,8 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
     return max_Δ
 end
 
-function cov_to_index(agent::BeliefDP, cov::Matrix{Float64})
-    σ = det(cov)^(1.0 / 6)
+function cov_to_index(agent::BeliefDP, cov_::Matrix{Float64})
+    σ = det(cov_)^(1.0 / 6)
     for (i, elem) in enumerate(agent.dev_borders)
         if σ < elem
             return i
@@ -547,8 +553,8 @@ function calc_motion_sigma_transition_probs(
     A = matA(v, ω, dt, 0.0)
     indices = Dict{Int64,Float64}()
     for σ in range(min_σ, max_σ * 0.999, length = sampling_num)
-        cov = σ * σ * F * transpose(F) + A * M * transpose(A)
-        index_after = cov_to_index(agent, cov)
+        cov_ = σ * σ * F * transpose(F) + A * M * transpose(A)
+        index_after = cov_to_index(agent, cov_)
         if !haskey(indices, index_after)
             indices[index_after] = 1
         else
@@ -556,7 +562,7 @@ function calc_motion_sigma_transition_probs(
         end
     end
     for (k, v) in indices
-        indices[k] /= sampling_num
+        indices[k] = 1.0 * v / sampling_num
     end
     return [(k, v) for (k, v) in indices]
 end
