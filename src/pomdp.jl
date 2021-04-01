@@ -448,3 +448,71 @@ function init_depth(agent::BeliefDP, world::PuddleWorld, sampling_num::Int64)
         end
     end
 end
+
+function correct_index(agent::BeliefDP, index_::Vector{Int64})
+    index = copy(index_)
+    index_nums = agent.index_nums
+    reso = agent.reso
+    while index[3] < 1
+        index[3] += index_nums[3]
+    end
+    while index[3] > index_nums[3]
+        index[3] -= index_nums[3]
+    end
+    out_reward = 0.0
+    for i in [1, 2]
+        if index[i] < 1
+            index[i] = 1
+            out_reward = -1e100
+        elseif index[i] > index_nums[i]
+            index[i] = index_nums[i]
+            out_reward = -1e100
+        end
+    end
+    return index, out_reward
+end
+
+function action_value(agent::BeliefDP, action::Vector{Float64}, index::Vector{Int64}, value_function::AbstractArray{Float64,4})
+    value = 0.0
+    dt = agent.dt    
+    transition = agent.state_transition_probs[(action[1], action[2], index[3])]
+    depth = agent.depth
+    puddle_coeff = agent.puddle_coeff
+    for (delta, prob) in transition
+        after, out_reward = correct_index(agent, index[1:3] + [delta...])
+        push!(after, 1)
+        reward = -dt + depth[after[1:2]...] * puddle_coeff - dt + out_reward
+        value += (value_function[after...] + reward) * prob
+    end
+    return value
+end
+
+function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
+    max_Δ = 0.0
+    indices = agent.indices
+    final_state_flags = agent.final_state_flags_
+    value_function = copy(agent.value_function_)
+    for index in indices
+        if final_state_flags[index...] == 0.0
+            max_a = nothing
+            max_q = -1e100
+            for action in agent.actions
+                q = action_value(
+                    agent,
+                    action,
+                    [index...],
+                    value_function
+                )
+                if q > max_q
+                    max_a = copy(action)
+                    max_q = q
+                end
+            end
+            Δ = abs(value_function[index...] - max_q)
+            max_Δ = max(Δ, max_Δ)
+            agent.value_function_[index...] = max_q
+            agent.policy_[index..., :] = max_a
+        end
+    end
+    return max_Δ
+end
