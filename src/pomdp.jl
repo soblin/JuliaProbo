@@ -281,8 +281,10 @@ mutable struct BeliefDP
     puddle_coeff::Float64
     dev_borders::Vector{Float64}
     dev_borders_side::Vector{Float64}
-    motion_sigma_transition_probs::Dict{Tuple{Int64, Vector{Float64}},
-                                        Dict{Vector{Int64}, Float64}}
+    motion_sigma_transition_probs::Dict{
+        Tuple{Int64,Vector{Float64}},
+        Dict{Vector{Int64},Float64},
+    }
 end
 
 # constructor
@@ -297,9 +299,9 @@ function BeliefDP(
 )
     pose_min = vcat(lowerleft, [0.0])
     pose_max = vcat(upperright, [2pi])
-    
+
     index_nums = [convert(Int64, round((pose_max[i] - pose_min[i]) / reso[i])) for i = 1:3]
-    push!(index_nums, length(dev_borders)+1)
+    push!(index_nums, length(dev_borders) + 1)
     v = zeros(Float64, index_nums...)
     f = zeros(Float64, index_nums...)
     indices = Vector{Tuple{Int64,Int64,Int64}}(undef, 0)
@@ -308,9 +310,10 @@ function BeliefDP(
     state_transition_probs =
         Dict{Tuple{Float64,Float64,Int64},Vector{Tuple{Vector{Int64},Float64}}}()
     depth = zeros(Float64, index_nums[1], index_nums[2])
-    dev_borders_side = [dev_borders[1]/10, dev_borders..., dev_borders[end]*10]
-    motion_sigma_transition_probs = Dict{Tuple{Int64,Vector{Float64}},Dict{Vector{Int64},Float64}}()
-    
+    dev_borders_side = [dev_borders[1] / 10, dev_borders..., dev_borders[end] * 10]
+    motion_sigma_transition_probs =
+        Dict{Tuple{Int64,Vector{Float64}},Dict{Vector{Int64},Float64}}()
+
     return BeliefDP(
         pose_min,
         pose_max,
@@ -343,7 +346,7 @@ function set_belief_state(
 
     corners = [[x_min, y_min], [x_max, y_min], [x_max, y_max], [x_min, y_max]]
     ret = convert(Float64, all([inside(goal, corner) for corner in corners]))
-    return ret * convert(Float64,index[4] == 1)
+    return ret * convert(Float64, index[4] == 1)
 end
 
 function init_value(agent::BeliefDP)
@@ -381,7 +384,7 @@ function init_policy(agent::BeliefDP)
     end
 end
 
-function init_state_transition_probs(agent::BeliefDP, sampling_num::Int64)
+function init_state_transition_probs(agent::BeliefDP; sampling_num = 100)
     dt = agent.dt
     reso = agent.reso
     indices = agent.indices
@@ -424,7 +427,7 @@ function init_state_transition_probs(agent::BeliefDP, sampling_num::Int64)
     end
 end
 
-function init_depth(agent::BeliefDP, world::PuddleWorld, sampling_num::Int64)
+function init_depth(agent::BeliefDP, world::PuddleWorld; sampling_num = 100)
     reso = agent.reso
     dxs = collect(range(0, reso[1], length = sampling_num))
     dys = collect(range(0, reso[2], length = sampling_num))
@@ -472,9 +475,14 @@ function correct_index(agent::BeliefDP, index_::Vector{Int64})
     return index, out_reward
 end
 
-function action_value(agent::BeliefDP, action::Vector{Float64}, index::Vector{Int64}, value_function::AbstractArray{Float64,4})
+function action_value(
+    agent::BeliefDP,
+    action::Vector{Float64},
+    index::Vector{Int64},
+    value_function::AbstractArray{Float64,4},
+)
     value = 0.0
-    dt = agent.dt    
+    dt = agent.dt
     transition = agent.state_transition_probs[(action[1], action[2], index[3])]
     depth = agent.depth
     puddle_coeff = agent.puddle_coeff
@@ -497,12 +505,7 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
             max_a = nothing
             max_q = -1e100
             for action in agent.actions
-                q = action_value(
-                    agent,
-                    action,
-                    [index...],
-                    value_function
-                )
+                q = action_value(agent, action, [index...], value_function)
                 if q > max_q
                     max_a = copy(action)
                     max_q = q
@@ -516,3 +519,11 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
     end
     return max_Δ
 end
+
+function calc_motion_sigma_transition_probs(
+    agent::BeliefDP,
+    min_sigma::Float64,
+    max_sigma::Float64,
+    action::Vector{Float64};
+    sampling_num = 100,
+) end

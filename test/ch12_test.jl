@@ -132,3 +132,37 @@ end
         gif(anim, "ch12_qmdp1.gif", fps = 10)
     end
 end
+
+@testset "ch12_amdp2" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks =
+        [Landmark([1.0, 4.0], 0), Landmark([4.0, 1.0], 1), Landmark([-4.0, -4.0], 2)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = PuddleWorld(xlim, ylim)
+    push!(world, envmap)
+    # goal
+    goal = Goal(-3.0, -3.0)
+    push!(world, goal)
+    # robot side
+    initial_pose = [2.0, 2.0, 0.0]
+    # estimator = KalmanFilter(envmap, initial_pose)
+    estimator = Mcl(initial_pose, 100)
+    reso = [0.1, 0.1, pi / 20]
+    dp_agent = BeliefDP([0.1, 0.1, pi / 20], Goal(-3.0, -3.0); dt = 0.1)
+    sampling_num = 10
+    init_value(dp_agent)
+    init_policy(dp_agent)
+    init_depth(dp_agent, world, sampling_num = sampling_num)
+    init_state_transition_probs(dp_agent, sampling_num = sampling_num)
+
+    value_iteration_sweep(dp_agent)
+    value_iteration_sweep(dp_agent)
+    v = dp_agent.value_function_[:, :, 20, 1]
+    import Seaborn
+    Seaborn.heatmap(rotl90(v))
+end
