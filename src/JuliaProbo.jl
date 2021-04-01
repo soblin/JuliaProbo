@@ -50,7 +50,7 @@ export PuddleIgnoreAgent,
     value_iteration_sweep,
     policy_iteration_sweep,
     DynamicProgramming
-export DpPolicyAgent, QMDPAgent
+export DpPolicyAgent, QMDPAgent, BeliefDP
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")
