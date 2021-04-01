@@ -133,7 +133,7 @@ end
     end
 end
 
-@testset "ch12_amdp2" begin
+@testset "ch12_amdp23" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
@@ -163,6 +163,6 @@ end
     value_iteration_sweep(dp_agent)
     value_iteration_sweep(dp_agent)
     v = dp_agent.value_function_[:, :, 20, 1]
-    import Seaborn
-    Seaborn.heatmap(rotl90(v))
+
+    init_motion_sigma_transition_probs(dp_agent)
 end

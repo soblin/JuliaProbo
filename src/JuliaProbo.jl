@@ -5,7 +5,7 @@ import RecipesBase: @recipe
 @reexport using Plots
 import Plots: Plot, plot, plot!, scatter!, annotate!, quiver!, text, @userplot, @series
 import Random: rand
-import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov
+import Distributions: Exponential, Normal, Uniform, MvNormal, pdf, mean, cov, det
 import LinearAlgebra: Diagonal, I, eigen, diagm
 import StatsBase: sample, Weights
 import StatsPlots: covellipse!
@@ -50,7 +50,7 @@ export PuddleIgnoreAgent,
     value_iteration_sweep,
     policy_iteration_sweep,
     DynamicProgramming
-export DpPolicyAgent, QMDPAgent, BeliefDP
+export DpPolicyAgent, QMDPAgent, BeliefDP, init_motion_sigma_transition_probs
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")

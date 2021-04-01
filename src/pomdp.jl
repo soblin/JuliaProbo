@@ -283,7 +283,7 @@ mutable struct BeliefDP
     dev_borders_side::Vector{Float64}
     motion_sigma_transition_probs::Dict{
         Tuple{Int64,Vector{Float64}},
-        Dict{Vector{Int64},Float64},
+        Vector{Tuple{Int64,Float64}},
     }
 end
 
@@ -312,7 +312,7 @@ function BeliefDP(
     depth = zeros(Float64, index_nums[1], index_nums[2])
     dev_borders_side = [dev_borders[1] / 10, dev_borders..., dev_borders[end] * 10]
     motion_sigma_transition_probs =
-        Dict{Tuple{Int64,Vector{Float64}},Dict{Vector{Int64},Float64}}()
+        Dict{Tuple{Int64,Vector{Float64}},Vector{Tuple{Int64,Float64}}}()
 
     return BeliefDP(
         pose_min,
@@ -520,10 +520,58 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
     return max_Δ
 end
 
+function cov_to_index(agent::BeliefDP, cov::Matrix{Float64})
+    σ = det(cov)^(1.0 / 6)
+    for (i, elem) in enumerate(agent.dev_borders)
+        if σ < elem
+            return i
+        end
+    end
+    return length(agent.dev_borders)
+end
+
 function calc_motion_sigma_transition_probs(
     agent::BeliefDP,
-    min_sigma::Float64,
-    max_sigma::Float64,
+    min_σ::Float64,
+    max_σ::Float64,
     action::Vector{Float64};
     sampling_num = 100,
-) end
+)
+    dt = agent.dt
+    v, ω = action[1], action[2]
+    if abs(ω) < 1e-5
+        ω = 1e-5 * sign(ω)
+    end
+    F = matF(v, ω, dt, 0.0)
+    M = matM(v, ω, dt, Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2))
+    A = matA(v, ω, dt, 0.0)
+    indices = Dict{Int64,Float64}()
+    for σ in range(min_σ, max_σ * 0.999, length = sampling_num)
+        cov = σ * σ * F * transpose(F) + A * M * transpose(A)
+        index_after = cov_to_index(agent, cov)
+        if !haskey(indices, index_after)
+            indices[index_after] = 1
+        else
+            indices[index_after] += 1
+        end
+    end
+    for (k, v) in indices
+        indices[k] /= sampling_num
+    end
+    return [(k, v) for (k, v) in indices]
+end
+
+function init_motion_sigma_transition_probs(agent::BeliefDP)
+    probs = agent.motion_sigma_transition_probs
+    dev_borders_side = agent.dev_borders_side
+    for a in agent.actions
+        for i = 1:length(agent.dev_borders)+1
+            probs[(i, a)] = calc_motion_sigma_transition_probs(
+                agent,
+                dev_borders_side[i],
+                dev_borders_side[i+1],
+                a,
+            )
+        end
+    end
+end
