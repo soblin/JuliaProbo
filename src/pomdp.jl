@@ -267,7 +267,7 @@ mutable struct BeliefDP
     reso::Vector{Float64}
     goal::Goal
     index_nums::Vector{Int64}
-    indices::Vector{Tuple{Int64,Int64,Int64}}
+    indices::Vector{Tuple{Int64,Int64,Int64,Int64}}
     value_function_::AbstractArray{Float64,4}
     final_state_flags_::AbstractArray{Float64,4}
     policy_::AbstractArray{Float64,5}
@@ -299,9 +299,9 @@ function BeliefDP(
     pose_max = vcat(upperright, [2pi])
     
     index_nums = [convert(Int64, round((pose_max[i] - pose_min[i]) / reso[i])) for i = 1:3]
-    push!(index_nums, length(dev_borders+1))
-    v = zeros(Float64, index_nums[1], index_nums[2], index_nums[3])
-    f = zeros(Float64, index_nums[1], index_nums[2], index_nums[3])
+    push!(index_nums, length(dev_borders)+1)
+    v = zeros(Float64, index_nums...)
+    f = zeros(Float64, index_nums...)
     indices = Vector{Tuple{Int64,Int64,Int64}}(undef, 0)
     policy_ = zeros(Float64, index_nums..., 2)
     actions = Set{Vector{Float64}}()
@@ -332,6 +332,20 @@ function BeliefDP(
     )
 end
 
+function set_belief_state(
+    reso::Vector{Float64},
+    goal::Goal,
+    pose_min::Vector{Float64},
+    index::Vector{Int64},
+)
+    x_min, y_min, θ_min = pose_min .+ reso .* (index[1:3] .- 1)
+    x_max, y_max, θ_max = pose_min .+ reso .* (index[1:3])
+
+    corners = [[x_min, y_min], [x_max, y_min], [x_max, y_max], [x_min, y_max]]
+    ret = convert(Float64, all([inside(goal, corner) for corner in corners]))
+    return ret * convert(Float64,index[4] == 1)
+end
+
 function init_value(agent::BeliefDP)
     index_nums = agent.index_nums
     goal = agent.goal
@@ -344,11 +358,11 @@ function init_value(agent::BeliefDP)
             for id3 = 1:index_nums[3]
                 for id4 = 1:index_nums[4]
                     index = (id1, id2, id3, id4)
-                    val = set_final_state(reso, goal, pose_min, index[1:3]...)
+                    val = set_belief_state(reso, goal, pose_min, [index...])
                     @inbounds f[index...] = val
                     @inbounds v[index...] = (val == 1.0) ? goal.value : (-100.0)
                     # this line is problematic if we use @distributed
-                    push!(agent.indices, index
+                    push!(agent.indices, index)
                 end
             end
         end
@@ -367,7 +381,8 @@ function init_policy(agent::BeliefDP)
     end
 end
 
-function init_state_transition_probs(agent::BeliefDP, dt::Float64, sampling_num::Int64)
+function init_state_transition_probs(agent::BeliefDP, sampling_num::Int64)
+    dt = agent.dt
     reso = agent.reso
     indices = agent.indices
     policy = agent.policy_
@@ -391,7 +406,7 @@ function init_state_transition_probs(agent::BeliefDP, dt::Float64, sampling_num:
             transitions = Vector{Vector{Int64}}(undef, 0)
             for dx in dxs
                 for dy in dys
-p                    for dθ in dθs
+                    for dθ in dθs
                         before = [dx, dy, dθ + (i_θ - 1) * reso[3]] .+ pose_min
                         before_index = [1, 1, i_θ]
                         after = state_transition(before, a[1], a[2], dt)
