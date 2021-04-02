@@ -116,7 +116,7 @@ end
     push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
     push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
 
-    anim = @animate for i = 1:180
+    anim = @animate for i = 1:10
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         # t
@@ -131,4 +131,49 @@ end
     if GUI
         gif(anim, "ch12_qmdp1.gif", fps = 10)
     end
+end
+
+@testset "ch12_amdp2345" begin
+    dt = 0.1
+    # environment
+    xlim = [-5.0, 5.0]
+    ylim = [-5.0, 5.0]
+    # id of landmark must start from 0 with 1 step
+    landmarks =
+        [Landmark([1.0, 4.0], 0), Landmark([4.0, 1.0], 1), Landmark([-4.0, -4.0], 2)]
+    envmap = Map()
+    push!(envmap, landmarks)
+    world = PuddleWorld(xlim, ylim)
+    push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
+    # goal
+    goal = Goal(-3.0, -3.0)
+    push!(world, goal)
+    push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
+    push!(world, envmap)
+    # robot side
+    initial_pose = [2.0, 2.0, 0.0]
+    # estimator = KalmanFilter(envmap, initial_pose)
+    estimator = Mcl(initial_pose, 100)
+    reso = [0.1, 0.1, pi / 20]
+    dp_agent = BeliefDP([0.2, 0.2, pi / 18], Goal(-3.0, -3.0); dt = 0.1)
+    sampling_num = 10
+    init_value(dp_agent)
+    init_policy(dp_agent)
+    init_depth(dp_agent, world, sampling_num = sampling_num)
+    init_state_transition_probs(dp_agent, sampling_num = sampling_num)
+
+    value_iteration_sweep(dp_agent)
+    value_iteration_sweep(dp_agent)
+    v = dp_agent.value_function_[:, :, 18, 1]
+
+    init_motion_sigma_transition_probs(dp_agent)
+    landmarks = [
+        Landmark([1.0, 4.0], 0),
+        Landmark([4.0, 1.0], 1),
+        Landmark([-4.0, 1.0], 2),
+        Landmark([-2.0, 1.0], 3),
+    ]
+    camera = IdealCamera(landmarks)
+    init_obs_sigma_transition_probs(dp_agent, camera)
+    value_iteration_sweep(dp_agent)
 end
