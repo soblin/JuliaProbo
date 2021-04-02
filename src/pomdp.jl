@@ -304,7 +304,7 @@ function BeliefDP(
     push!(index_nums, length(dev_borders) + 1)
     v = zeros(Float64, index_nums...)
     f = zeros(Float64, index_nums...)
-    indices = Vector{Tuple{Int64,Int64,Int64}}(undef, 0)
+    indices = Vector{Tuple{Int64,Int64,Int64,Int64}}(undef, 0)
     policy_ = zeros(Float64, index_nums..., 2)
     actions = Set{Vector{Float64}}()
     state_transition_probs =
@@ -491,10 +491,11 @@ function action_value(
         after, out_reward = correct_index(agent, index[1:3] + [delta...])
         push!(after, 1)
         reward = -dt * depth[after[1:2]...] * puddle_coeff - dt + out_reward
-        # value += (value_function[after...] + reward) * prob
-        for (σ_after, σ_prob) in sigma_transition[(index[4], action)]
-            after[4] = σ_after
-            value += (value_function[after...] + reward) * σ_prob * prob
+        if haskey(sigma_transition, (index[4], action))
+            for (σ_after, σ_prob) in sigma_transition[(index[4], action)]
+                after[4] = σ_after
+                value += (value_function[after...] + reward) * σ_prob * prob
+            end
         end
     end
     return value
@@ -505,7 +506,6 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
     indices = agent.indices
     final_state_flags = agent.final_state_flags_
     value_function = copy(agent.value_function_)
-    # value_function = agent.value_function_
     for index in indices
         if final_state_flags[index...] == 0.0
             max_a = nothing
@@ -546,7 +546,7 @@ function calc_motion_sigma_transition_probs(
     dt = agent.dt
     v, ω = action[1], action[2]
     if abs(ω) < 1e-5
-        ω = 1e-5 * sign(ω)
+        ω = 1e-5
     end
     F = matF(v, ω, dt, 0.0)
     M = matM(v, ω, dt, Dict("vv" => 0.19, "vω" => 0.001, "ωv" => 0.13, "ωω" => 0.2))
@@ -562,7 +562,7 @@ function calc_motion_sigma_transition_probs(
         end
     end
     for (k, v) in indices
-        indices[k] = 1.0 * v / sampling_num
+        indices[k] /= sampling_num
     end
     return [(k, v) for (k, v) in indices]
 end

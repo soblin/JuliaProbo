@@ -133,7 +133,7 @@ end
     end
 end
 
-@testset "ch12_amdp23" begin
+@testset "ch12_amdp234" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
@@ -144,16 +144,18 @@ end
     envmap = Map()
     push!(envmap, landmarks)
     world = PuddleWorld(xlim, ylim)
-    push!(world, envmap)
+    push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
     # goal
     goal = Goal(-3.0, -3.0)
     push!(world, goal)
+    push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
+    push!(world, envmap)
     # robot side
     initial_pose = [2.0, 2.0, 0.0]
     # estimator = KalmanFilter(envmap, initial_pose)
     estimator = Mcl(initial_pose, 100)
     reso = [0.1, 0.1, pi / 20]
-    dp_agent = BeliefDP([0.1, 0.1, pi / 20], Goal(-3.0, -3.0); dt = 0.1)
+    dp_agent = BeliefDP([0.2, 0.2, pi / 18], Goal(-3.0, -3.0); dt = 0.1)
     sampling_num = 10
     init_value(dp_agent)
     init_policy(dp_agent)
@@ -162,7 +164,8 @@ end
 
     value_iteration_sweep(dp_agent)
     value_iteration_sweep(dp_agent)
-    v = dp_agent.value_function_[:, :, 20, 1]
+    v = dp_agent.value_function_[:, :, 18, 1]
 
     init_motion_sigma_transition_probs(dp_agent)
+    value_iteration_sweep(dp_agent)
 end
