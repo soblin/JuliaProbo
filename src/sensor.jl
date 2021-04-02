@@ -39,7 +39,7 @@ function observations(camera::Union{IdealCamera,Nothing}, camera_pose::Vector{Fl
     for i = 1:n
         z = observation_function(camera_pose, camera.landmarks_[i].pos_)
         if visible(camera, z)
-            push!(observed, copy(z))
+            push!(observed, [z..., camera.landmarks_[i].id])
         end
     end
     camera.last_observation_ = copy(observed)

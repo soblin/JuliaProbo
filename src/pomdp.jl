@@ -285,6 +285,7 @@ mutable struct BeliefDP
         Tuple{Int64,Vector{Float64}},
         Vector{Tuple{Int64,Float64}},
     }
+    obs_sigma_transition_probs::Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}
 end
 
 # constructor
@@ -313,6 +314,7 @@ function BeliefDP(
     dev_borders_side = [dev_borders[1] / 10, dev_borders..., dev_borders[end] * 10]
     motion_sigma_transition_probs =
         Dict{Tuple{Int64,Vector{Float64}},Vector{Tuple{Int64,Float64}}}()
+    obs_sigma_transition_probs = Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}()
 
     return BeliefDP(
         pose_min,
@@ -332,6 +334,7 @@ function BeliefDP(
         dev_borders,
         dev_borders_side,
         motion_sigma_transition_probs,
+        obs_sigma_transition_probs,
     )
 end
 
@@ -579,5 +582,38 @@ function init_motion_sigma_transition_probs(agent::BeliefDP)
                 a,
             )
         end
+    end
+end
+
+function observation_update(
+    lm_id::Int64,
+    S::Matrix{Float64},
+    camera::IdealCamera,
+    pose::Vector{Float64},
+)
+    distance_dev_rate = 0.14
+    direction_dev = 0.05
+
+    H = matH(pose, camera.landmarks_[lm_id+1].pos_)
+    est_z = observation_function(pose, camera.landmarks_[lm_id+1].pos_)
+    Q = matQ(distance_dev_rate * est_z[1], direction_dev)
+    K = S * transpose(H) * (inv(Q + H * S * transpose(H)))
+    return (Matrix(1.0I, 3, 3) - K * H) * S
+end
+
+function init_obs_sigma_transition_probs(agent::BeliefDP, camera::IdealCamera)
+    sigma_transition = agent.obs_sigma_transition_probs
+    pose_min = agent.pose_min
+    reso = agent.reso
+    dev_borders_side = agent.dev_borders_side
+    for index in agent.indices
+        pose = pose_min .+ reso .* ([index[1:3]...] * 1.0 .- 0.5)
+        σ = (dev_borders_side[index[4]] + dev_borders_side[index[4]+1]) / 2.0
+        S = Matrix(σ^2 * I, 3, 3)
+        for d in observations(camera, pose)
+            lm_id = convert(Int64, d[3])
+            S = observation_update(lm_id, S, camera, pose)
+        end
+        sigma_transition[index] = (cov_to_index(agent, S), 1.0)
     end
 end

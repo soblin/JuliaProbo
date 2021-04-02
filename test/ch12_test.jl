@@ -116,7 +116,7 @@ end
     push!(world, Puddle([-2.0, 0.0], [0.0, 2.0], 0.1))
     push!(world, Puddle([-0.5, -2.0], [2.5, 1.0], 0.1))
 
-    anim = @animate for i = 1:180
+    anim = @animate for i = 1:10
         t = dt * i
         annota = "t = $(round(t, sigdigits=3))[s]"
         # t
@@ -133,7 +133,7 @@ end
     end
 end
 
-@testset "ch12_amdp234" begin
+@testset "ch12_amdp2345" begin
     dt = 0.1
     # environment
     xlim = [-5.0, 5.0]
@@ -167,5 +167,13 @@ end
     v = dp_agent.value_function_[:, :, 18, 1]
 
     init_motion_sigma_transition_probs(dp_agent)
+    landmarks = [
+        Landmark([1.0, 4.0], 0),
+        Landmark([4.0, 1.0], 1),
+        Landmark([-4.0, 1.0], 2),
+        Landmark([-2.0, 1.0], 3),
+    ]
+    camera = IdealCamera(landmarks)
+    init_obs_sigma_transition_probs(dp_agent, camera)
     value_iteration_sweep(dp_agent)
 end
