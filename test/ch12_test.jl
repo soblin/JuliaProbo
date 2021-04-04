@@ -175,5 +175,6 @@ end
     ]
     camera = IdealCamera(landmarks)
     init_obs_sigma_transition_probs(dp_agent, camera)
+    init_expected_depths(dp_agent, world)
     value_iteration_sweep(dp_agent)
 end

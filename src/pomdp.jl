@@ -286,6 +286,7 @@ mutable struct BeliefDP
         Vector{Tuple{Int64,Float64}},
     }
     obs_sigma_transition_probs::Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}
+    depths::AbstractArray{Float64,3}
 end
 
 # constructor
@@ -315,6 +316,7 @@ function BeliefDP(
     motion_sigma_transition_probs =
         Dict{Tuple{Int64,Vector{Float64}},Vector{Tuple{Int64,Float64}}}()
     obs_sigma_transition_probs = Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}()
+    depths = zeros(Float64, index_nums[1], index_nums[2], index_nums[3])
 
     return BeliefDP(
         pose_min,
@@ -335,6 +337,7 @@ function BeliefDP(
         dev_borders_side,
         motion_sigma_transition_probs,
         obs_sigma_transition_probs,
+        depths,
     )
 end
 
@@ -632,6 +635,35 @@ function init_obs_sigma_transition_probs(agent::BeliefDP, camera::IdealCamera)
             S = observation_update(lm_id, S, camera, pose)
         end
         sigma_transition[index] = (cov_to_index(agent, S), 1.0)
+    end
+end
+
+function init_expected_depths(agent::BeliefDP, world::PuddleWorld; sampling_num = 100)
+    puddles = world.puddles_
+    index_nums = agent.index_nums
+    reso = agent.reso
+    pose_min = agent.pose_min
+    dev_borders_side = agent.dev_borders_side
+    depths = agent.depths
+    for id1 in index_nums[1]
+        for id2 in index_nums[2]
+            for id3 in index_nums[4]
+                index = [id1, id2, id3]
+                pose = pose_min[1:2] .+ reso[1:2] .* (index[1:2] .- 0.5)
+                σ = (dev_borders_side[id3] + dev_borders_side[id3+1]) / 2.0
+                belief = MvNormal(pose, Matrix(σ^2 * I, 2, 2))
+                depth_sum = 0.0
+                samples = rand(belief, sampling_num)
+                for i_pos = 1:sampling_num
+                    pos = samples[:, i_pos]
+                    depth_sum += sum([
+                        puddle.depth * convert(Float64, inside(puddle, pos)) for
+                        puddle in puddles
+                    ])
+                end
+                depths[index...] = depth_sum / sampling_num
+            end
+        end
     end
 end
 
