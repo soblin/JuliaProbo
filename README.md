@@ -3,7 +3,9 @@
 [![CI](https://github.com/soblin/JuliaProbo/actions/workflows/ci.yml/badge.svg)](https://github.com/soblin/JuliaProbo/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/soblin/JuliaProbo/branch/test/graph/badge.svg?token=OZM1DIACUQ)](https://codecov.io/gh/soblin/JuliaProbo)
 
-Re-implementation of [『詳解　確率ロボティクス』](https://github.com/ryuichiueda/LNPR_BOOK_CODES) in Julia language．Place the dataset in `/sensor_data`.
+Re-implementation of [『詳解　確率ロボティクス』](https://github.com/ryuichiueda/LNPR_BOOK_CODES) in Julia language．Great kudos to @ryuichiueda.
+
+Place the dataset in `/sensor_data`.
 
 ## Dependency
 
