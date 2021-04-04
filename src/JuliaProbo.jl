@@ -51,7 +51,12 @@ export PuddleIgnoreAgent,
     policy_iteration_sweep,
     DynamicProgramming
 export DpPolicyAgent,
-    QMDPAgent, BeliefDP, init_motion_sigma_transition_probs, init_obs_sigma_transition_probs
+    QMDPAgent,
+    BeliefDP,
+    init_motion_sigma_transition_probs,
+    init_obs_sigma_transition_probs,
+    init_expected_depths,
+    AMDPPolicyAgent
 
 # `include` order does matter(needs to be topologically sorted based on the type definition dependency)
 include("types.jl")

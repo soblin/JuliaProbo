@@ -286,6 +286,7 @@ mutable struct BeliefDP
         Vector{Tuple{Int64,Float64}},
     }
     obs_sigma_transition_probs::Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}
+    depths::AbstractArray{Float64,3}
 end
 
 # constructor
@@ -315,6 +316,7 @@ function BeliefDP(
     motion_sigma_transition_probs =
         Dict{Tuple{Int64,Vector{Float64}},Vector{Tuple{Int64,Float64}}}()
     obs_sigma_transition_probs = Dict{Tuple{Int64,Int64,Int64,Int64},Tuple{Int64,Float64}}()
+    depths = zeros(Float64, index_nums[1], index_nums[2], index_nums[3])
 
     return BeliefDP(
         pose_min,
@@ -335,6 +337,7 @@ function BeliefDP(
         dev_borders_side,
         motion_sigma_transition_probs,
         obs_sigma_transition_probs,
+        depths,
     )
 end
 
@@ -487,28 +490,41 @@ function action_value(
     value = 0.0
     dt = agent.dt
     transition = agent.state_transition_probs[(action[1], action[2], index[3])]
-    depth = agent.depth
+    depths = agent.depths
     puddle_coeff = agent.puddle_coeff
-    sigma_transition = agent.motion_sigma_transition_probs
+    motion_transition = agent.motion_sigma_transition_probs
+    obs_transition = agent.obs_sigma_transition_probs
+
     for (delta, prob) in transition
         after, out_reward = correct_index(agent, index[1:3] + [delta...])
         push!(after, 1)
-        reward = -dt * depth[after[1:2]...] * puddle_coeff - dt + out_reward
-        if haskey(sigma_transition, (index[4], action))
-            for (σ_after, σ_prob) in sigma_transition[(index[4], action)]
+        if haskey(motion_transition, (index[4], action))
+            for (σ_after, σ_prob) in motion_transition[(index[4], action)]
                 after[4] = σ_after
-                value += (value_function[after...] + reward) * σ_prob * prob
+                σ_obs, σ_obs_prob = obs_transition[(after...,)]
+                reward = -dt * depths[after[1:2]..., σ_obs] * puddle_coeff - dt + out_reward
+
+                value +=
+                    (value_function[after[1:3]..., σ_obs] + reward) *
+                    σ_prob *
+                    prob *
+                    σ_obs_prob
             end
         end
     end
     return value
 end
 
-function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
+function value_iteration_sweep(agent::BeliefDP; γ = 1.0, snapshot = false)
     max_Δ = 0.0
     indices = agent.indices
     final_state_flags = agent.final_state_flags_
-    value_function = copy(agent.value_function_)
+    value_function = nothing
+    if snapshot == true
+        value_function = copy(agent.value_function_)
+    else
+        value_function = agent.value_function_
+    end
     for index in indices
         if final_state_flags[index...] == 0.0
             max_a = nothing
@@ -527,6 +543,16 @@ function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
         end
     end
     return max_Δ
+end
+
+function cov_to_index(dev_borders::Vector{Float64}, cov_::Matrix{Float64})
+    σ = det(cov_)^(1.0 / 6)
+    for (i, elem) in enumerate(dev_borders)
+        if σ < elem
+            return i
+        end
+    end
+    return length(dev_borders)
 end
 
 function cov_to_index(agent::BeliefDP, cov_::Matrix{Float64})
@@ -557,7 +583,7 @@ function calc_motion_sigma_transition_probs(
     indices = Dict{Int64,Float64}()
     for σ in range(min_σ, max_σ * 0.999, length = sampling_num)
         cov_ = σ * σ * F * transpose(F) + A * M * transpose(A)
-        index_after = cov_to_index(agent, cov_)
+        index_after = cov_to_index(agent.dev_borders, cov_)
         if !haskey(indices, index_after)
             indices[index_after] = 1
         else
@@ -616,4 +642,133 @@ function init_obs_sigma_transition_probs(agent::BeliefDP, camera::IdealCamera)
         end
         sigma_transition[index] = (cov_to_index(agent, S), 1.0)
     end
+end
+
+function init_expected_depths(agent::BeliefDP, world::PuddleWorld; sampling_num = 100)
+    puddles = world.puddles_
+    index_nums = agent.index_nums
+    reso = agent.reso
+    pose_min = agent.pose_min
+    dev_borders_side = agent.dev_borders_side
+    depths = agent.depths
+    for id1 = 1:index_nums[1]
+        for id2 = 1:index_nums[2]
+            for id3 = 1:index_nums[4]
+                index = [id1, id2, id3]
+                pose = pose_min[1:2] .+ reso[1:2] .* (index[1:2] .- 0.5)
+                σ = (dev_borders_side[id3] + dev_borders_side[id3+1]) / 2.0
+                belief = MvNormal(pose, Matrix(σ^2 * I, 2, 2))
+                depth_sum = 0.0
+                samples = rand(belief, sampling_num)
+                for i_pos = 1:sampling_num
+                    pos = samples[:, i_pos]
+                    depth_sum += sum([
+                        puddle.depth * convert(Float64, inside(puddle, pos)) for
+                        puddle in puddles
+                    ])
+                end
+                depths[index...] = depth_sum / sampling_num
+            end
+        end
+    end
+end
+
+mutable struct AMDPPolicyAgent <: AbstractMDPAgent
+    v_::Float64
+    ω_::Float64
+    dt::Float64
+    prev_v_::Float64
+    prev_ω_::Float64
+    estimator_::AbstractEstimator
+    puddle_coeff::Float64
+    puddle_depth_::Float64
+    total_reward_::Float64
+    in_goal_::Bool
+    final_value_::Float64
+    goal::Goal
+    reso::Vector{Float64}
+    pose_min::Vector{Float64}
+    pose_max::Vector{Float64}
+    index_nums::Vector{Int64}
+    policy_data::AbstractArray{Float64,5}
+    dev_borders::Vector{Float64}
+end
+
+function AMDPPolicyAgent(
+    v::Float64,
+    ω::Float64,
+    dt::Float64,
+    estimator::AbstractEstimator,
+    goal::Goal,
+    reso::Vector{Float64};
+    lowerleft = [-4.0, -4.0],
+    upperright = [4.0, 4.0],
+    puddle_coeff = 100,
+    dev_borders = [0.1, 0.2, 0.4, 0.8],
+)
+    pose_min = vcat(lowerleft, [0.0])
+    pose_max = vcat(upperright, [2pi])
+    index_nums = [convert(Int64, round((pose_max[i] - pose_min[i]) / reso[i])) for i = 1:3]
+    push!(index_nums, length(dev_borders) + 1)
+    policy_data = zeros(Float64, index_nums..., 2)
+    return AMDPPolicyAgent(
+        v,
+        ω,
+        dt,
+        0.0,
+        0.0,
+        estimator,
+        puddle_coeff,
+        0.0,
+        0.0,
+        false,
+        0.0,
+        goal,
+        reso,
+        pose_min,
+        pose_max,
+        index_nums,
+        policy_data,
+        dev_borders,
+    )
+end
+
+function init_policy(agent::AMDPPolicyAgent, fname = "policy.txt")
+    policy_data = agent.policy_data
+    fd = open(fname, "r")
+    lines = readlines(fd)
+    for line in lines
+        tokens = split(line, " ")
+        tokens = map(x -> parse(Float64, x), tokens)
+        id1, id2, id3, id4 = map(x -> convert(Int64, x), tokens[1:4])
+        v, ω = tokens[5], tokens[6]
+        policy_data[id1, id2, id3, id4, :] = [v, ω]
+    end
+end
+
+function policy(agent::AMDPPolicyAgent)
+    reso = agent.reso
+    pose = agent.estimator_.pose_
+    pose_min = agent.pose_min
+    index_nums = agent.index_nums
+    # normalize index
+    index = [convert(Int64, round((pose[i] - pose_min[i]) / reso[i])) for i = 1:3]
+    while index[3] < 1
+        index[3] += index_nums[3]
+    end
+    while index[3] > index_nums[3]
+        index[3] -= index_nums[3]
+    end
+    for i in [1, 2]
+        if index[i] < 1
+            index[i] = 1
+        end
+        if index[i] > index_nums[i]
+            index[i] = index_nums[i]
+        end
+    end
+    belief_index = cov_to_index(agent.dev_borders, cov(agent.estimator_.belief_))
+    push!(index, belief_index)
+    a = agent.policy_data[index..., :]
+    return a
 end
