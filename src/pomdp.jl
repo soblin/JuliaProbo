@@ -490,7 +490,7 @@ function action_value(
     value = 0.0
     dt = agent.dt
     transition = agent.state_transition_probs[(action[1], action[2], index[3])]
-    depth = agent.depth
+    depths = agent.depths
     puddle_coeff = agent.puddle_coeff
     motion_transition = agent.motion_sigma_transition_probs
     obs_transition = agent.obs_sigma_transition_probs
@@ -498,11 +498,12 @@ function action_value(
     for (delta, prob) in transition
         after, out_reward = correct_index(agent, index[1:3] + [delta...])
         push!(after, 1)
-        reward = -dt * depth[after[1:2]...] * puddle_coeff - dt + out_reward
         if haskey(motion_transition, (index[4], action))
             for (σ_after, σ_prob) in motion_transition[(index[4], action)]
                 after[4] = σ_after
                 σ_obs, σ_obs_prob = obs_transition[(after...,)]
+                reward = -dt * depths[after[1:2]..., σ_obs] * puddle_coeff - dt + out_reward
+
                 value +=
                     (value_function[after[1:3]..., σ_obs] + reward) *
                     σ_prob *
