@@ -314,10 +314,15 @@ function action_value(
     return value
 end
 
-function policy_evaluation_sweep(pe::PolicyEvaluator; γ = 1.0)
+function policy_evaluation_sweep(pe::PolicyEvaluator; γ = 1.0, snapshot = false)
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
-    value_function = copy(pe.value_function_)
+    value_function = nothing
+    if snapshot == true
+        value_function = copy(pe.value_function_)
+    else
+        value_function = pe.value_function_
+    end
     max_Δ = 0.0
     for index in indices
         if final_state_flags[index...] == 0.0
@@ -334,11 +339,16 @@ function policy_evaluation_sweep(pe::PolicyEvaluator; γ = 1.0)
     return max_Δ
 end
 
-function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
+function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0, snapshot = false)
     max_Δ = 0.0
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
-    value_function = copy(pe.value_function_)
+    value_function = nothing
+    if snapshot == true
+        value_function = copy(pe.value_function_)
+    else
+        value_function = pe.value_function_
+    end
     for index in indices
         if final_state_flags[index...] == 0.0
             max_a = nothing
@@ -366,14 +376,19 @@ function value_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
     return max_Δ
 end
 
-function policy_iteration_sweep(pe::PolicyEvaluator; γ = 1.0)
-    vi = policy_evaluation_sweep(pe; γ = γ)
+function policy_iteration_sweep(pe::PolicyEvaluator; γ = 1.0, snapshot = false)
+    vi = policy_evaluation_sweep(pe; γ = γ, snapshot = snapshot)
 
     action_switch_num = 0
     total_num = 0
     indices = pe.indices
     final_state_flags = pe.final_state_flags_
-    value_function = pe.value_function_
+    value_function = nothing
+    if snapshot == true
+        value_function = copy(pe.value_function_)
+    else
+        value_function = pe.value_function_
+    end
     for index in indices
         if final_state_flags[index...] == 0.0
             total_num += 1

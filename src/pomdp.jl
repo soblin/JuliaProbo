@@ -515,11 +515,16 @@ function action_value(
     return value
 end
 
-function value_iteration_sweep(agent::BeliefDP; γ = 1.0)
+function value_iteration_sweep(agent::BeliefDP; γ = 1.0, snapshot = false)
     max_Δ = 0.0
     indices = agent.indices
     final_state_flags = agent.final_state_flags_
-    value_function = copy(agent.value_function_)
+    value_function = nothing
+    if snapshot == true
+        value_function = copy(agent.value_function_)
+    else
+        value_function = agent.value_function_
+    end
     for index in indices
         if final_state_flags[index...] == 0.0
             max_a = nothing
@@ -646,9 +651,9 @@ function init_expected_depths(agent::BeliefDP, world::PuddleWorld; sampling_num 
     pose_min = agent.pose_min
     dev_borders_side = agent.dev_borders_side
     depths = agent.depths
-    for id1 in 1:index_nums[1]
-        for id2 in 1:index_nums[2]
-            for id3 in 1:index_nums[4]
+    for id1 = 1:index_nums[1]
+        for id2 = 1:index_nums[2]
+            for id3 = 1:index_nums[4]
                 index = [id1, id2, id3]
                 pose = pose_min[1:2] .+ reso[1:2] .* (index[1:2] .- 0.5)
                 σ = (dev_borders_side[id3] + dev_borders_side[id3+1]) / 2.0
