@@ -646,9 +646,9 @@ function init_expected_depths(agent::BeliefDP, world::PuddleWorld; sampling_num 
     pose_min = agent.pose_min
     dev_borders_side = agent.dev_borders_side
     depths = agent.depths
-    for id1 in index_nums[1]
-        for id2 in index_nums[2]
-            for id3 in index_nums[4]
+    for id1 in 1:index_nums[1]
+        for id2 in 1:index_nums[2]
+            for id3 in 1:index_nums[4]
                 index = [id1, id2, id3]
                 pose = pose_min[1:2] .+ reso[1:2] .* (index[1:2] .- 0.5)
                 σ = (dev_borders_side[id3] + dev_borders_side[id3+1]) / 2.0
