@@ -5,8 +5,6 @@
 
 Re-implementation of [『詳解　確率ロボティクス』](https://github.com/ryuichiueda/LNPR_BOOK_CODES) in Julia language．Great kudos to @ryuichiueda.
 
-Place the dataset in `/sensor_data`.
-
 ## Dependency
 
 - julia(1.6.0)
@@ -17,3 +15,5 @@ Place the dataset in `/sensor_data`.
 ## Branch
 
 Basically the package in branch `ch<n>` only works for `notebook/ch<n>*.ipynb`.
+
+
